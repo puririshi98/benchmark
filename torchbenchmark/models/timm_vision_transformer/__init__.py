@@ -5,6 +5,7 @@ import timm.models.vision_transformer
 from ...util.model import BenchmarkModel
 from torchbenchmark.tasks import COMPUTER_VISION
 from .config import TimmConfig
+import torch.cuda.nvtx as nvtx
 
 class Model(BenchmarkModel):
     task = COMPUTER_VISION.GENERATION
@@ -31,31 +32,60 @@ class Model(BenchmarkModel):
             device=self.device, dtype=torch.long).random_(self.cfg.num_classes)
 
     def _step_train(self):
+        nvtx.range_push('zeroing optimizer grad')
         self.cfg.optimizer.zero_grad()
+        nvtx.range_pop()
+        nvtx.range_push('forward pass')
         output = self.model(self.cfg.example_inputs)
+        nvtx.range_pop()
         if isinstance(output, tuple):
             output = output[0]
+        nvtx.range_push('__gen__target')
         target = self._gen_target(output.shape[0])
+        nvtx.range_pop()
+        nvtx.range_push('loss')
         self.cfg.loss(output, target).backward()
+        nvtx.range_pop()
+        nvtx.range_push('step')
         self.cfg.optimizer.step()
+        nvtx.range_pop()
 
     def _step_eval(self):
+        nvtx.range_push('eval')
         output = self.model(self.cfg.infer_example_inputs)
+        nvtx.range_pop()
 
     def get_module(self):
         return self.model, (self.cfg.example_inputs,)
 
     def train(self, niter=1):
         self.model.train()
-        for _ in range(niter):
-            self._step_train()
+        graphs=True
+        if graphs:
+            s = torch.cuda.Stream()
+            with torch.cuda.stream(s):
+                g = torch.cuda._Graph()
+                g.capture_begin()
+                self._step_train()
+                g.capture_end()
+            for _ in range(niter-1):
+                g.replay()
+        else:
+            for _ in range(niter):
+                self._step_train()
 
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
         self.model.eval()
         with torch.no_grad():
-            for _ in range(niter):
+            s = torch.cuda.Stream()
+            with torch.cuda.stream(s):
+                g = torch.cuda._Graph()
+                g.capture_begin()
                 self._step_eval()
+                g.capture_end()
+            for _ in range(niter-1):
+                g.replay()
 
 if __name__ == "__main__":
     for device in ['cpu', 'cuda']:

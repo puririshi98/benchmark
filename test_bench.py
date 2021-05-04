@@ -19,7 +19,7 @@ import torch
 from torchbenchmark import list_models
 from torchbenchmark.util.machine_config import get_machine_state
 from torchbenchmark.util.model import no_grad
-
+import torch.cuda.nvtx as nvtx
 def pytest_generate_tests(metafunc):
     # This is where the list of models to test can be configured
     # e.g. by using info in metafunc.config
@@ -70,20 +70,26 @@ class TestBenchNetwork:
     """
     def test_train(self, hub_model, benchmark):
         try:
+            torch.cuda.cudart().cudaProfilerStart()
+            nvtx.range_push("Training")
             hub_model.set_train()
             benchmark(hub_model.train)
             benchmark.extra_info['machine_state'] = get_machine_state()
+            torch.cuda.cudart().cudaProfilerStop()
+            nvtx.range_pop()
         except NotImplementedError:
             print('Method train is not implemented, skipping...')
 
     def test_eval(self, hub_model, benchmark, pytestconfig):
         try:
             ng_flag = hub_model.eval_in_nograd() and not pytestconfig.getoption("disable_nograd")
+            torch.cuda.cudart().cudaProfilerStart()
             with no_grad(ng_flag):
                 hub_model.set_eval()
                 benchmark(hub_model.eval)
                 benchmark.extra_info['machine_state'] = get_machine_state()
                 if pytestconfig.getoption("check_opt_vs_noopt_jit"):
                     hub_model.check_opt_vs_noopt_jit()
+            torch.cuda.cudart().cudaProfilerStop()
         except NotImplementedError:
             print('Method eval is not implemented, skipping...')
