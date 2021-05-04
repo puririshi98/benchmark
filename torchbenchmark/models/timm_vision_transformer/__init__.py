@@ -60,35 +60,13 @@ class Model(BenchmarkModel):
 
     def train(self, niter=1):
         self.model.train()
-        graphs=True
-        if graphs:
-            for _ in range(10):
-                self._step_train()
-            s = torch.cuda.Stream()
-            with torch.cuda.stream(s):
-                g = torch.cuda._Graph()
-                g.capture_begin()
-                self._step_train()
-                g.capture_end()
-            for _ in range(niter-1):
-                g.replay()
-        else:
-            for _ in range(niter):
-                self._step_train()
+        for _ in range(niter):
+            self._step_train()
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
         self.model.eval()
-        for _ in range(10):
+        for _ in range(niter):
             self._step_eval()
-        with torch.no_grad():
-            s = torch.cuda.Stream()
-            with torch.cuda.stream(s):
-                g = torch.cuda._Graph()
-                g.capture_begin()
-                self._step_eval()
-                g.capture_end()
-            for _ in range(niter-11):
-                g.replay()
 
 if __name__ == "__main__":
     for device in ['cpu', 'cuda']:
