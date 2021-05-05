@@ -65,6 +65,7 @@ class Model(BenchmarkModel):
         if graphs:
             for _ in range(2):
                 self._step_train()
+            torch.cuda.empty_cache()
             s = torch.cuda.Stream()
             with torch.cuda.stream(s):
                 g = torch.cuda._Graph()
@@ -83,6 +84,7 @@ class Model(BenchmarkModel):
         for _ in range(2):
             self._step_eval()
         with torch.no_grad():
+            torch.cuda.empty_cache()
             s = torch.cuda.Stream()
             with torch.cuda.stream(s):
                 g = torch.cuda._Graph()
