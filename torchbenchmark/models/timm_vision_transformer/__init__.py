@@ -59,21 +59,30 @@ class Model(BenchmarkModel):
         return self.model, (self.cfg.example_inputs,)
 
     def train(self, niter=1):
-        niter = 5
+        niter = 8
         self.model.train()
         graphs=True
         if graphs:
-            for _ in range(2):
-                self._step_train()
-            torch.cuda.empty_cache()
             s = torch.cuda.Stream()
+            torch.cuda.synchronize()
             with torch.cuda.stream(s):
+                nvtx.range_push('warming up')
+                for _ in range(5):
+                    self._step_train()
+                nvtx.range_pop
+                torch.cuda.empty_cache()
                 g = torch.cuda._Graph()
+                torch.cuda.synchronize()
+                nvtx.range_push('capturing graph')
                 g.capture_begin()
                 self._step_train()
                 g.capture_end()
+                nvtx.range_pop()
+                torch.cuda.synchronize()
+            nvtx.range_push('replaying')
             for _ in range(niter-3):
                 g.replay()
+            nvtx.range_pop()
         else:
             for _ in range(niter):
                 self._step_train()
