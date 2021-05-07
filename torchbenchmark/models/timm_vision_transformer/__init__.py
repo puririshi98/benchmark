@@ -55,7 +55,7 @@ class Model(BenchmarkModel):
 
     def _step_eval(self):
         nvtx.range_push('eval')
-        output = self.model(self.cfg.infer_example_inputs)
+        output = self.model(self.cfg.infer_example_inputs.half())
         nvtx.range_pop()
 
     def get_module(self):
@@ -94,6 +94,7 @@ class Model(BenchmarkModel):
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
         self.model.eval()
+        self.model = self.model.half()
         graphs=True
         if graphs:
             niter = 8
