@@ -69,7 +69,7 @@ class Model(BenchmarkModel):
                 nvtx.range_push('warming up')
                 for _ in range(5):
                     self._step_train()
-                nvtx.range_pop
+                nvtx.range_pop()
                 torch.cuda.empty_cache()
                 g = torch.cuda._Graph()
                 torch.cuda.synchronize()
@@ -98,7 +98,7 @@ class Model(BenchmarkModel):
                 nvtx.range_push('warming up')
                 for _ in range(5):
                     self._step_eval()
-                nvtx.range_pop
+                nvtx.range_pop()
                 torch.cuda.empty_cache()
                 g = torch.cuda._Graph()
                 torch.cuda.synchronize()
