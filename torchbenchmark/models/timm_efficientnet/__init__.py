@@ -59,10 +59,10 @@ class Model(BenchmarkModel):
         return self.model, (self.cfg.example_inputs,)
 
     def train(self, niter=1):
-        niter = 8
         self.model.train()
         graphs=True
         if graphs:
+            niter = 8
             s = torch.cuda.Stream()
             torch.cuda.synchronize()
             with torch.cuda.stream(s):
@@ -88,10 +88,10 @@ class Model(BenchmarkModel):
                 self._step_train()
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
-        niter = 8
         self.model.train()
         graphs=True
         if graphs:
+            niter = 8
             s = torch.cuda.Stream()
             torch.cuda.synchronize()
             with torch.cuda.stream(s):

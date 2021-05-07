@@ -59,10 +59,10 @@ class Model(BenchmarkModel):
         return self.model, (self.cfg.example_inputs,)
 
     def train(self, niter=1):
-        niter = 8
         self.model.train()
         graphs=True
         if graphs:
+            niter = 8
             s = torch.cuda.Stream()
             torch.cuda.synchronize()
             with torch.cuda.stream(s):
@@ -88,23 +88,23 @@ class Model(BenchmarkModel):
                 self._step_train()
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
-        niter = 8
-        self.model.eval()
+        self.model.train()
         graphs=True
         if graphs:
+            niter = 8
             s = torch.cuda.Stream()
             torch.cuda.synchronize()
             with torch.cuda.stream(s):
                 nvtx.range_push('warming up')
                 for _ in range(5):
-                    self._step_eval()
+                    self._step_train()
                 nvtx.range_pop()
                 torch.cuda.empty_cache()
                 g = torch.cuda._Graph()
                 torch.cuda.synchronize()
                 nvtx.range_push('capturing graph')
                 g.capture_begin()
-                self._step_eval()
+                self._step_train()
                 g.capture_end()
                 nvtx.range_pop()
                 torch.cuda.synchronize()
@@ -114,8 +114,7 @@ class Model(BenchmarkModel):
             nvtx.range_pop()
         else:
             for _ in range(niter):
-                self._step_eval()
-
+                self._step_train()
 if __name__ == "__main__":
     for device in ['cpu', 'cuda']:
         for jit in [False, True]:
