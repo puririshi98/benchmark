@@ -88,7 +88,7 @@ class Model(BenchmarkModel):
                 self._step_train()
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
-        self.model.train()
+        self.model.eval()
         graphs=True
         if graphs:
             niter = 8
