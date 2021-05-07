@@ -62,6 +62,7 @@ class Model(BenchmarkModel):
         self.model.train()
         graphs=True
         if graphs:
+            self.model.to(memory_format=torch.channels_last)
             niter = 8
             s = torch.cuda.Stream()
             torch.cuda.synchronize()
