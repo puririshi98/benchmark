@@ -18,7 +18,7 @@ def pytest_addoption(parser):
                     help="Run benchmarks on cpu only and ignore machine configuration checks")
 
 def set_fuser(fuser):
-	torch._C._jit_set_profiling_executor(True)
+    torch._C._jit_set_profiling_executor(True)
     torch._C._jit_set_profiling_mode(True)
     torch._C._jit_set_bailout_depth(20)
     torch._C._jit_set_num_profiled_runs(2)
