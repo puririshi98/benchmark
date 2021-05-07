@@ -83,6 +83,7 @@ class Model(BenchmarkModel):
             nvtx.range_push('replaying')
             for _ in range(niter-3):
                 g.replay()
+                torch.cuda.synchronize()
             nvtx.range_pop()
         else:
             for _ in range(niter):
@@ -112,6 +113,7 @@ class Model(BenchmarkModel):
             nvtx.range_push('replaying')
             for _ in range(niter-3):
                 g.replay()
+                torch.cuda.synchronize()
             nvtx.range_pop()
         else:
             for _ in range(niter):
