@@ -52,7 +52,7 @@ class Model(BenchmarkModel):
 
     def _step_eval(self):
         nvtx.range_push('eval')
-        output = self.model(self.cfg.infer_example_inputs)
+        output = self.model(self.cfg.infer_example_inputs.half())
         nvtx.range_pop()
 
     def get_module(self):
@@ -93,6 +93,7 @@ class Model(BenchmarkModel):
         self.model.eval()
         torch.backends.cudnn.benchmark = True
         with torch.no_grad():
+            self.model = self.model.half()
             graphs=True
             if graphs:
                 niter = 8
