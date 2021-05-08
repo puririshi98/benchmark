@@ -91,6 +91,7 @@ class Model(BenchmarkModel):
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
         self.model.eval()
+        torch.backends.cudnn.benchmark = True
         with torch.no_grad():
             graphs=True
             if graphs:
@@ -103,19 +104,19 @@ class Model(BenchmarkModel):
                         self._step_eval()
                     nvtx.range_pop()
                     torch.cuda.empty_cache()
-                #     g = torch.cuda._Graph()
-                #     torch.cuda.synchronize()
-                #     nvtx.range_push('capturing graph')
-                #     g.capture_begin()
-                #     self._step_eval()
-                #     g.capture_end()
-                #     nvtx.range_pop()
-                #     torch.cuda.synchronize()
-                # nvtx.range_push('replaying')
-                # for _ in range(niter-3):
-                #     g.replay()
-                #     torch.cuda.synchronize()
-                # nvtx.range_pop()
+                    g = torch.cuda._Graph()
+                    torch.cuda.synchronize()
+                    nvtx.range_push('capturing graph')
+                    g.capture_begin()
+                    self._step_eval()
+                    g.capture_end()
+                    nvtx.range_pop()
+                    torch.cuda.synchronize()
+                nvtx.range_push('replaying')
+                for _ in range(niter-3):
+                    g.replay()
+                    torch.cuda.synchronize()
+                nvtx.range_pop()
             else:
                 for _ in range(niter):
                     self._step_eval()
