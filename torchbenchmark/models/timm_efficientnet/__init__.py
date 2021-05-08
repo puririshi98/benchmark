@@ -102,6 +102,7 @@ class Model(BenchmarkModel):
 				torch.cuda.synchronize()
 				with torch.cuda.stream(s):
 					nvtx.range_push('warming up')
+					print('warming up')
 					for _ in range(5):
 						self._step_eval()
 					nvtx.range_pop()
@@ -109,12 +110,14 @@ class Model(BenchmarkModel):
 					g = torch.cuda._Graph()
 					torch.cuda.synchronize()
 					nvtx.range_push('capturing graph')
+					print('capturing graph')
 					g.capture_begin()
 					self._step_eval()
 					g.capture_end()
 					nvtx.range_pop()
 					torch.cuda.synchronize()
 				nvtx.range_push('replaying')
+				print('replaying')
 				for _ in range(niter-3):
 					g.replay()
 					torch.cuda.synchronize()
