@@ -22,9 +22,6 @@ class Model(BenchmarkModel):
         )
         if device == 'cuda':
             torch.cuda.empty_cache()
-        if jit:
-            self.model = torch.jit.script(self.model)
-            assert isinstance(self.model, torch.jit.ScriptModule)
 
     def _gen_target(self, batch_size):
         return torch.empty(
@@ -63,6 +60,9 @@ class Model(BenchmarkModel):
 
     def train(self, niter=1):
         self.model.train()
+        if jit:
+            self.model = torch.jit.script(self.model)
+            assert isinstance(self.model, torch.jit.ScriptModule)
         graphs=True
         if graphs:
             self.model.to(memory_format=torch.channels_last)
@@ -94,6 +94,9 @@ class Model(BenchmarkModel):
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
         self.model.eval()
+        if jit:
+            self.model = torch.jit.script(self.model)
+            assert isinstance(self.model, torch.jit.ScriptModule)
         # self.model = self.model.half()
         graphs=True
         if graphs:
