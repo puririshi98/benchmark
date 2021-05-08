@@ -60,7 +60,7 @@ class Model(BenchmarkModel):
 
     def train(self, niter=1):
         self.model.train()
-        if jit:
+        if self.jit:
             self.model = torch.jit.script(self.model)
             assert isinstance(self.model, torch.jit.ScriptModule)
         graphs=True
@@ -94,7 +94,7 @@ class Model(BenchmarkModel):
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
         self.model.eval()
-        if jit:
+        if self.jit:
             self.model = torch.jit.script(self.model)
             assert isinstance(self.model, torch.jit.ScriptModule)
         # self.model = self.model.half()
