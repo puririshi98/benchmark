@@ -90,6 +90,7 @@ class Model(BenchmarkModel):
                 self._step_train()
     # TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
     def eval(self, niter=1):
+        torch.cuda.cudart().cudaProfilerStart()
         self.model.eval()
         torch.backends.cudnn.benchmark = True
         with torch.no_grad():
@@ -121,7 +122,7 @@ class Model(BenchmarkModel):
             else:
                 for _ in range(niter):
                     self._step_eval()
-
+        torch.cuda.cudart().cudaProfilerStop()
 if __name__ == "__main__":
     for device in ['cpu', 'cuda']:
         for jit in [False, True]:
