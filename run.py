@@ -11,7 +11,7 @@ Wall time provided for sanity but is not a sane benchmark measurement.
 import argparse
 import time
 import torch.autograd.profiler as profiler
-
+from conftest import set_fuser
 from torchbenchmark import list_models
 
 def run_one_step(func):
@@ -48,13 +48,7 @@ if __name__ == "__main__":
     else:
         print(f"Unable to find model matching {args.model}")
         exit(-1)
-    torch._C._jit_set_nvfuser_enabled(True)
-    torch._C._jit_set_texpr_fuser_enabled(False)
-    torch._C._jit_set_profiling_executor(True)
-    torch._C._jit_set_profiling_mode(True)
-    torch._C._jit_override_can_fuse_on_cpu(False)
-    torch._C._jit_override_can_fuse_on_gpu(False)
-    torch._C._jit_set_bailout_depth(20)
+    set_fuser('')
     # build the model and get the chosen test method
     m = Model(args.device, args.mode)
     test = getattr(m, args.test)
