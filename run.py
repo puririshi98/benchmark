@@ -49,7 +49,8 @@ if __name__ == "__main__":
     else:
         print(f"Unable to find model matching {args.model}")
         exit(-1)
-    set_fuser(args.fuser)
+    if args.mode == 'jit':
+        set_fuser(args.fuser)
     # build the model and get the chosen test method
     m = Model(args.device, args.mode)
     test = getattr(m, args.test)
