@@ -94,37 +94,41 @@ class Model(BenchmarkModel):
 	# TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
 	def eval(self, niter=1):
 		torch.cuda.cudart().cudaProfilerStart()
-		self.model.eval()
-		torch.backends.cudnn.benchmark = True
-		with torch.no_grad():
-			self.model = self.model.half()
-			graphs=True
-			if graphs:
-				niter = 8
-				s = torch.cuda.Stream()
-				torch.cuda.synchronize()
-				with torch.cuda.stream(s):
-					nvtx.range_push('warming up')
-					for _ in range(5):
+		with torch.autograd.profiler.emit_nvtx(record_shape=True):
+			self.model.eval()
+			torch.backends.cudnn.benchmark = True
+			with torch.no_grad():
+				self.model = self.model.half()
+				graphs=True
+				if graphs:
+					niter = 8
+					s = torch.cuda.Stream()
+					torch.cuda.synchronize()
+					with torch.cuda.stream(s):
+						nvtx.range_push('warming up')
+						print('warming up')
+						for _ in range(5):
+							self._step_eval()
+						nvtx.range_pop()
+						torch.cuda.empty_cache()
+						g = torch.cuda._Graph()
+						torch.cuda.synchronize()
+						nvtx.range_push('capturing graph')
+						print('capturing graph')
+						g.capture_begin()
 						self._step_eval()
+						g.capture_end()
+						nvtx.range_pop()
+						torch.cuda.synchronize()
+					nvtx.range_push('replaying')
+					print('replaying')
+					for _ in range(niter-3):
+						g.replay()
+						torch.cuda.synchronize()
 					nvtx.range_pop()
-					torch.cuda.empty_cache()
-					g = torch.cuda._Graph()
-					torch.cuda.synchronize()
-					nvtx.range_push('capturing graph')
-					g.capture_begin()
-					self._step_eval()
-					g.capture_end()
-					nvtx.range_pop()
-					torch.cuda.synchronize()
-				nvtx.range_push('replaying')
-				for _ in range(niter-3):
-					g.replay()
-					torch.cuda.synchronize()
-				nvtx.range_pop()
-			else:
-				for _ in range(niter):
-					self._step_eval()
+				else:
+					for _ in range(niter):
+						self._step_eval()
 		torch.cuda.cudart().cudaProfilerStop()
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
