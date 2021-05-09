@@ -35,6 +35,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--device", choices=["cpu",  "cuda"], default="cpu", help="Which device to use.")
     parser.add_argument("-m", "--mode", choices=["eager",  "jit"], default="eager", help="Which mode to run.")
     parser.add_argument("-t", "--test", choices=["eval",  "train"], default="eval", help="Which test to run.")
+    parser.add_argument("-fuser", choices=["te",  "nv"], default="nv", help="Which fuser to run.")
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     args = parser.parse_args()
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     else:
         print(f"Unable to find model matching {args.model}")
         exit(-1)
-    set_fuser('')
+    set_fuser(args.fuser)
     # build the model and get the chosen test method
     m = Model(args.device, args.mode)
     test = getattr(m, args.test)
