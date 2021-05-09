@@ -53,9 +53,12 @@ class Model(BenchmarkModel):
 		self.cfg.optimizer.step()
 		nvtx.range_pop()
 
-	def _step_eval(self):
+	def _step_eval(self, precision):
 		nvtx.range_push('eval')
-		output = self.model(self.cfg.infer_example_inputs.half())
+		if precision=='fp16':
+			output = self.model(self.cfg.infer_example_inputs.half())
+		else:
+			output = self.model(self.cfg.infer_example_inputs)
 		nvtx.range_pop()
 
 	def get_module(self):
@@ -92,23 +95,23 @@ class Model(BenchmarkModel):
 			for _ in range(niter):
 				self._step_train()
 	# TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
-	def eval(self, niter=1):
+	def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
 		torch.cuda.cudart().cudaProfilerStart()
+		niter = 8
 		with torch.autograd.profiler.emit_nvtx(record_shape=True):
 			self.model.eval()
-			torch.backends.cudnn.benchmark = True
+			torch.backends.cudnn.benchmark = bench
 			with torch.no_grad():
-				self.model = self.model.half()
-				graphs=True
+				if precision == 'fp16':
+					self.model = self.model.half()
 				if graphs:
-					niter = 8
 					s = torch.cuda.Stream()
 					torch.cuda.synchronize()
 					with torch.cuda.stream(s):
 						nvtx.range_push('warming up')
 						print('warming up')
 						for _ in range(5):
-							self._step_eval()
+							self._step_eval(precision)
 						nvtx.range_pop()
 						torch.cuda.empty_cache()
 						g = torch.cuda._Graph()
@@ -116,7 +119,7 @@ class Model(BenchmarkModel):
 						nvtx.range_push('capturing graph')
 						print('capturing graph')
 						g.capture_begin()
-						self._step_eval()
+						self._step_eval(precision)
 						g.capture_end()
 						nvtx.range_pop()
 						torch.cuda.synchronize()
@@ -128,7 +131,7 @@ class Model(BenchmarkModel):
 					nvtx.range_pop()
 				else:
 					for _ in range(niter):
-						self._step_eval()
+						self._step_eval(precision)
 		torch.cuda.cudart().cudaProfilerStop()
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:

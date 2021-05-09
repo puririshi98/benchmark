@@ -14,9 +14,9 @@ import torch.autograd.profiler as profiler
 from conftest import set_fuser
 from torchbenchmark import list_models
 
-def run_one_step(func):
+def run_one_step(func, precision='fp16', graphs=False, bench=False):
     t0 = time.time()
-    func()
+    func(precision=precision, graphs=graphs, bench=bench)
     t1 = time.time()
     print(f"Ran in {t1 - t0} seconds.")
 
@@ -36,6 +36,9 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--mode", choices=["eager",  "jit"], default="eager", help="Which mode to run.")
     parser.add_argument("-t", "--test", choices=["eval",  "train"], default="eval", help="Which test to run.")
     parser.add_argument("-fuser", choices=["te",  "nv"], default="nv", help="Which fuser to run.")
+    parser.add_argument("-graphs", action="store_true", help="use cudagraphs")
+    parser.add_argument("-precision", choices=["fp32",  "fp16"], default="fp16", help="Which precision to run in (fp16 vs fp32).")
+    parser.add_argument("-cudnnbenchmark", action="store_true",  help="turn cudnn benchmark on")
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     args = parser.parse_args()
 
@@ -55,10 +58,7 @@ if __name__ == "__main__":
     m = Model(args.device, args.mode)
     test = getattr(m, args.test)
 
-    if args.profile:
-        profile_one_step(test)
-    else:
-        run_one_step(test)
+    run_one_step(test, precision=args.precision, graphs=args.graphs, bench=args.cudnnbenchmark)
 
 
 
