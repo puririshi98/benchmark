@@ -96,7 +96,6 @@ class Model(BenchmarkModel):
 				self._step_train()
 	# TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
 	def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
-		torch.cuda.cudart().cudaProfilerStart()
 		niter = 8
 		with torch.autograd.profiler.emit_nvtx(record_shape=True):
 			self.model.eval()
@@ -132,7 +131,6 @@ class Model(BenchmarkModel):
 				else:
 					for _ in range(niter):
 						self._step_eval(precision)
-		torch.cuda.cudart().cudaProfilerStop()
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
 		for jit in [False, True]:

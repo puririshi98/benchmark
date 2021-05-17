@@ -13,6 +13,7 @@ import time
 import torch.autograd.profiler as profiler
 from conftest import set_fuser
 from torchbenchmark import list_models
+import torch
 
 def run_one_step(func, precision='fp16', graphs=False, bench=False):
     t0 = time.time()
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("-cudnnbenchmark", action="store_true",  help="turn cudnn benchmark on")
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     args = parser.parse_args()
+    torch.cuda.cudart().cudaProfilerStart()
 
     found = False
     for Model in list_models():
@@ -59,6 +61,7 @@ if __name__ == "__main__":
     test = getattr(m, args.test)
 
     run_one_step(test, precision=args.precision, graphs=args.graphs, bench=args.cudnnbenchmark)
+    torch.cuda.cudart().cudaProfilerStop()
 
 
 
