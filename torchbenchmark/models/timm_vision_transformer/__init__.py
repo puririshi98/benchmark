@@ -97,7 +97,7 @@ class Model(BenchmarkModel):
 	# TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
 	def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
 		niter = 8
-		with torch.autograd.profiler.emit_nvtx(record_shape=True):
+		with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 			self.model.eval()
 			torch.backends.cudnn.benchmark = bench
 			with torch.no_grad():
