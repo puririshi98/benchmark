@@ -1,5 +1,6 @@
 from torchbenchmark import list_models
 import torch
+import trtorch
 
 effnet=None
 vt=None
