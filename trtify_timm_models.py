@@ -1,7 +1,7 @@
 from torchbenchmark import list_models
 import torch
 import trtorch
-
+trtorch.logging.set_reportable_log_level(trtorch.logging.Level.Debug)
 effnet=None
 vt=None
 for Model in list_models():
