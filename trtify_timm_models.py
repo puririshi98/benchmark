@@ -22,7 +22,7 @@ compile_settings = {
 trt_ts_module = trtorch.compile(scripted_model, compile_settings)
 torch.jit.save(trt_ts_module, 'timm_efficientnet.jit')
 
-ef = VT()
+vt = VT()
 input_shapes = list(vt.cfg.infer_example_inputs.shape)
 model = vt.model.eval().cuda()
 scripted_model = torch.jit.script(model)
