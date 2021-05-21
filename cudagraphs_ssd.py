@@ -1,21 +1,24 @@
 import torch
+def _step_eval(model, batch):
+	nvtx.range_push('eval')
+	output = model(batch)
+	nvtx.range_pop()
 precision = 'fp16'
-model = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd', model_math=precision)
+model = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd', model_math=precision).half()
 niter = 8
+batch = torch.zeros(size=(3, 300, 300)).cuda().half()
 torch.cuda.cudart().cudaProfilerStart()
 with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 	model.eval().cuda()
 	torch.backends.cudnn.benchmark = True
 	with torch.no_grad():
-		if precision == 'fp16':
-			self.model = self.model.half()
 		s = torch.cuda.Stream()
 		torch.cuda.synchronize()
 		with torch.cuda.stream(s):
 			nvtx.range_push('warming up')
 			print('warming up')
 			for _ in range(5):
-				self._step_eval(precision)
+				_step_eval(model, batch)
 			nvtx.range_pop()
 			torch.cuda.empty_cache()
 			g = torch.cuda._Graph()
@@ -23,7 +26,7 @@ with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 			nvtx.range_push('capturing graph')
 			print('capturing graph')
 			g.capture_begin()
-			self._step_eval(precision)
+			_step_eval(model, batch)
 			g.capture_end()
 			nvtx.range_pop()
 			torch.cuda.synchronize()
