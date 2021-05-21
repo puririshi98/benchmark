@@ -7,7 +7,7 @@ def _step_eval(model, batch):
 precision = 'fp16'
 model = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd', model_math=precision).half()
 niter = 8
-batch = torch.zeros(size=(3, 300, 300)).cuda().half()
+batch = torch.zeros(size=(1, 3, 300, 300)).cuda().half()
 torch.cuda.cudart().cudaProfilerStart()
 with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 	model.eval().cuda()
