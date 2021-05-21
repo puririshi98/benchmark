@@ -2,7 +2,7 @@ import torch
 import trtorch
 precision = 'fp16'
 ssd_model = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd', model_math=precision)
-input_shapes = [3, 300, 300]
+input_shapes = [1, 3, 300, 300]
 model = ssd_model.eval().cuda()
 scripted_model = torch.jit.script(model)
 
