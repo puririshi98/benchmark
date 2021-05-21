@@ -1,4 +1,5 @@
 import torch
+import torch.cuda.nvtx as nvtx
 def _step_eval(model, batch):
 	nvtx.range_push('eval')
 	output = model(batch)
