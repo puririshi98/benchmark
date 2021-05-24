@@ -57,7 +57,7 @@ if __name__ == "__main__":
     if args.mode == 'jit':
         set_fuser(args.fuser)
     # build the model and get the chosen test method
-    m = Model(args.device, args.mode)
+    m = Model(args.device, jit=(args.mode=="jit"))
     test = getattr(m, args.test)
 
     run_one_step(test, precision=args.precision, graphs=args.graphs, bench=args.cudnnbenchmark)
