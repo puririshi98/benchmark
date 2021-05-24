@@ -41,9 +41,7 @@ if __name__ == "__main__" :
 	model.eval()
    
 	jit_model = torch.jit.script(model)
-  
 	for idx in range(10) :
 		out = model(inputs, mask_bool)
-​
 	for idx in range(10) :
 		out = jit_model(inputs, mask_bool)
