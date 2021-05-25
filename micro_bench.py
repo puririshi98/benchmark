@@ -11,7 +11,6 @@ class Fusion(nn.Module):
 		self.ptwise = (1,24,112,112)
 		self.conv2d = ((1,24,112,112),(24,1,33))
 		self.convwt = torch.randn(conv2d[0], device="cuda", dtype=torch.float)
-​
 	def forward(self, inputy):
 		out1 = F.batch_norm(inputy, 1.5, 4.2, weight=None, bias=None, training=False) + inputy
 
