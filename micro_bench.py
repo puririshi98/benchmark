@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import Module
 import torch.nn.functional as F
-​import torch.cuda.nvtx as nvtx
+import torch.cuda.nvtx as nvtx
 import math
 class Fusion(nn.Module):
 	def __init__(self):
