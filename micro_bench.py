@@ -33,11 +33,9 @@ if __name__ == "__main__" :
 	inputs = torch.randn(1, 8, 197, inner_dim, device="cuda", dtype=torch.float, requires_grad=False)
 	mask = torch.randn(1, 1, 1, inner_dim, device="cuda", dtype=torch.float, requires_grad=False)
 	mask_bool = mask > 0.
-   
 	model = Fusion(BertConfig())
 	model.cuda()
 	model.eval()
-   
 	jit_model = torch.jit.script(model)
 	for idx in range(10) :
 		out = model(inputs, mask_bool)
