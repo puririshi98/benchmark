@@ -23,11 +23,9 @@ class Fusion(nn.Module):
 		self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
 		self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 	def forward(self, inputs, mask):
-		out1 = inputs / math.sqrt(self.attention_head_size)
-		out2 = out1 + mask
-		out3 = F.softmax(out2, dim=-1)
-		out4 = self.dropout(out3)
-		return out4
+        out1 = inputs / math.sqrt(self.attention_head_size)
+        out3 = F.softmax(out1, dim=-1)
+        return out3
 # eager is 10 passes on data
 # fuesd is 3
 inner_dim = 197
