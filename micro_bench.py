@@ -27,7 +27,7 @@ if __name__ == "__main__" :
 	model.eval()
 	nvtx.range_push("replaying eager")
 	for idx in range(10) :
-		out = model(inputs, mask_bool)
+		out = model(inputs)
 	nvtx.range_pop()
 	torch._C._jit_set_nvfuser_enabled(True)
 	torch._C._jit_set_texpr_fuser_enabled(False)
@@ -39,6 +39,6 @@ if __name__ == "__main__" :
 	jit_model = torch.jit.script(model)
 	nvtx.range_push("replaying nvfuser")
 	for idx in range(10) :
-		out = jit_model(inputs, mask_bool)
+		out = jit_model(inputs)
 	nvtx.range_pop()
 	torch.cuda.cudart().cudaProfilerStop()
