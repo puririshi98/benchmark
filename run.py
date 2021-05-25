@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("-cudnnbenchmark", action="store_true",  help="turn cudnn benchmark on")
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     args = parser.parse_args()
+    print(args)
     torch.cuda.cudart().cudaProfilerStart()
 
     found = False
