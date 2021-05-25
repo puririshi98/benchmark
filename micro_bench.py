@@ -2,42 +2,47 @@ import torch
 from torch import nn
 from torch.nn import Module
 import torch.nn.functional as F
+​import torch.cuda.nvtx as nvtx
 import math
-torch._C._jit_set_nvfuser_enabled(True)
-torch._C._jit_set_texpr_fuser_enabled(False)
-torch._C._jit_set_profiling_executor(True)
-torch._C._jit_set_profiling_mode(True)
-torch._C._jit_override_can_fuse_on_cpu(False)
-torch._C._jit_override_can_fuse_on_gpu(False)
-torch._C._jit_set_bailout_depth(20)
-class BertConfig :
-	def __init__(self) :
-		self.hidden_size = 1024
-		self.num_attention_heads = 16
-		self.hidden_dropout_prob = 0.1
-		self.attention_probs_dropout_prob = 0.1
-		self.num_layers = 10
+​
 class Fusion(nn.Module):
-	def __init__(self, config):
+	def __init__(self):
 		super(Fusion, self).__init__()
-		self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
-		self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-	def forward(self, inputs, mask):
-		out1 = inputs / math.sqrt(self.attention_head_size)
-		out3 = F.softmax(out1, dim=-1)
-		return out3
+		self.batchnorm_size = ((1,24,112,112),(24,24,24,24))
+		self.ptwise = (1,24,112,112)
+		self.conv2d = ((1,24,112,112),(24,1,33))
+		self.convwt = torch.randn(conv2d[0], device="cuda", dtype=torch.float)
+​
+	def forward(self, inputy):
+		out1 = F.batch_norm(inputy, 1.5, 4.2, weight=None, bias=None, training=False) + inputy
+
+		out2 = F.conv2d(out1,self.convwt)
+		return out2
+​
+​
 # eager is 10 passes on data
 # fuesd is 3
 inner_dim = 197
 if __name__ == "__main__" :
-	inputs = torch.randn(1, 8, 197, inner_dim, device="cuda", dtype=torch.float, requires_grad=False)
-	mask = torch.randn(1, 1, 1, inner_dim, device="cuda", dtype=torch.float, requires_grad=False)
-	mask_bool = mask > 0.
-	model = Fusion(BertConfig())
+	torch.cuda.cudart().cudaProfilerStart()
+	inputs = torch.randn((1, 24, 112,112), device="cuda", dtype=torch.float, requires_grad=False)
+	model = Fusion()
 	model.cuda()
 	model.eval()
-	jit_model = torch.jit.script(model)
+	nvtx.range_push("replaying eager")
 	for idx in range(10) :
 		out = model(inputs, mask_bool)
+	nvtx.range_pop()
+	​torch._C._jit_set_nvfuser_enabled(True)
+	torch._C._jit_set_texpr_fuser_enabled(False)
+	torch._C._jit_set_profiling_executor(True)
+	torch._C._jit_set_profiling_mode(True)
+	torch._C._jit_override_can_fuse_on_cpu(False)
+	torch._C._jit_override_can_fuse_on_gpu(False)
+	torch._C._jit_set_bailout_depth(20)
+	jit_model = torch.jit.script(model)
+	nvtx.range_push("replaying nvfuser")
 	for idx in range(10) :
 		out = jit_model(inputs, mask_bool)
+	nvtx.range_pop()
+	torch.cuda.cudart().cudaProfilerStop()
