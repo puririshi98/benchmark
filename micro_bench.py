@@ -4,7 +4,6 @@ from torch.nn import Module
 import torch.nn.functional as F
 ​import torch.cuda.nvtx as nvtx
 import math
-​
 class Fusion(nn.Module):
 	def __init__(self):
 		super(Fusion, self).__init__()
@@ -17,9 +16,7 @@ class Fusion(nn.Module):
 		out1 = F.batch_norm(inputy, 1.5, 4.2, weight=None, bias=None, training=False) + inputy
 
 		out2 = F.conv2d(out1,self.convwt)
-		return out2
-​
-​
+		return out
 # eager is 10 passes on data
 # fuesd is 3
 inner_dim = 197
