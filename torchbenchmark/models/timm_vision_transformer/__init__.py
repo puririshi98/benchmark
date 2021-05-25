@@ -10,7 +10,7 @@ import torch.cuda.nvtx as nvtx
 class Model(BenchmarkModel):
 	task = COMPUTER_VISION.GENERATION
 
-	def __init__(self, device=None, jit=False, variant='vit_small_patch16_224', precision='float32'):
+	def __init__(self, device=None, jit=False, variant='vit_small_patch16_224', precision='float32', batchsize=1):
 		super().__init__()
 		self.device = device
 		self.jit = jit
@@ -25,6 +25,8 @@ class Model(BenchmarkModel):
 		if jit:
 			self.model = torch.jit.script(self.model)
 			assert isinstance(self.model, torch.jit.ScriptModule)
+		self.batchsize=batchsize
+		self.batch = self.cfg.infer_example_inputs if batchsize == 1 else self.cfg.infer_example_inputs.repeat(batchsize,1,1,1)
 
 	def _gen_target(self, batch_size):
 		return torch.empty(
@@ -56,9 +58,9 @@ class Model(BenchmarkModel):
 	def _step_eval(self, precision):
 		nvtx.range_push('eval')
 		if precision=='fp16':
-			output = self.model(self.cfg.infer_example_inputs.half())
+			output = self.model(self.batch.half())
 		else:
-			output = self.model(self.cfg.infer_example_inputs)
+			output = self.model(self.batch)
 		nvtx.range_pop()
 
 	def get_module(self):
