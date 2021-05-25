@@ -29,7 +29,7 @@ if __name__ == "__main__" :
 	for idx in range(10) :
 		out = model(inputs, mask_bool)
 	nvtx.range_pop()
-	​torch._C._jit_set_nvfuser_enabled(True)
+	torch._C._jit_set_nvfuser_enabled(True)
 	torch._C._jit_set_texpr_fuser_enabled(False)
 	torch._C._jit_set_profiling_executor(True)
 	torch._C._jit_set_profiling_mode(True)
