@@ -16,7 +16,7 @@ class Fusion(nn.Module):
 		out1 = F.batch_norm(inputy, self.runningmn_var*4, self.runningmn_var*4.2, weight=None, bias=None, training=False) + inputy
 
 		out2 = F.conv2d(out1,self.convwt)
-		return out
+		return out2
 # eager is 10 passes on data
 # fuesd is 3
 inner_dim = 197
