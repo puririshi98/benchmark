@@ -513,7 +513,7 @@ def main():
 		dllogger.log(step="PARAMETER", data={"SEED": args.seed})
 
 	raw_train_start = None
-	if args.do_train:
+	if True:
 		if is_main_process():
 			dllogger.log(step="PARAMETER", data={"train_start": True})
 			dllogger.log(step="PARAMETER", data={"batch_size_per_gpu": args.train_batch_size})
