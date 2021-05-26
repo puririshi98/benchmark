@@ -528,458 +528,250 @@ def main():
 		pool = ProcessPoolExecutor(1)
 		torch.cuda.cudart().cudaProfilerStart()
 		# Note: We loop infinitely over epochs, termination is handled via iteration count
-		if not args.graphs:
-			while True:
-				nvtx.range_push("an epoch")
-				thread = None
+		while True:
+			nvtx.range_push("an epoch")
+			thread = None
+			restored_data_loader = None
+			if not args.resume_from_checkpoint or epoch > 0 or (args.phase2 and global_step < 1) or args.init_checkpoint:
+				files = [os.path.join(args.input_dir, f) for f in os.listdir(args.input_dir) if
+						 os.path.isfile(os.path.join(args.input_dir, f)) and 'training' in f]
+				files.sort()
+				num_files = len(files)
+				random.Random(args.seed + epoch).shuffle(files)
+				f_start_id = 0
+			else:
+				f_start_id = checkpoint['files'][0]
+				files = checkpoint['files'][1:]
+				args.resume_from_checkpoint = False
+				num_files = len(files)
+				# may not exist in all checkpoints
+				epoch = checkpoint.get('epoch', 0)
+				restored_data_loader = checkpoint.get('data_loader', None)
+
+			shared_file_list = {}
+
+			if torch.distributed.is_initialized() and get_world_size() > num_files:
+				remainder = get_world_size() % num_files
+				data_file = files[(f_start_id*get_world_size()+get_rank() + remainder*f_start_id)%num_files]
+			else:
+				data_file = files[(f_start_id*get_world_size()+get_rank())%num_files]
+
+			previous_file = data_file
+
+			if restored_data_loader is None:
+				train_data = pretraining_dataset(data_file, args.max_predictions_per_seq)
+				train_sampler = RandomSampler(train_data)
+				train_dataloader = DataLoader(train_data, sampler=train_sampler,
+											  batch_size=args.train_batch_size * args.n_gpu,
+											  num_workers=4, worker_init_fn=worker_init,
+											  pin_memory=True)
+				# shared_file_list["0"] = (train_dataloader, data_file)
+			else:
+				train_dataloader = restored_data_loader
 				restored_data_loader = None
-				if not args.resume_from_checkpoint or epoch > 0 or (args.phase2 and global_step < 1) or args.init_checkpoint:
-					files = [os.path.join(args.input_dir, f) for f in os.listdir(args.input_dir) if
-							 os.path.isfile(os.path.join(args.input_dir, f)) and 'training' in f]
-					files.sort()
-					num_files = len(files)
-					random.Random(args.seed + epoch).shuffle(files)
-					f_start_id = 0
-				else:
-					f_start_id = checkpoint['files'][0]
-					files = checkpoint['files'][1:]
-					args.resume_from_checkpoint = False
-					num_files = len(files)
-					# may not exist in all checkpoints
-					epoch = checkpoint.get('epoch', 0)
-					restored_data_loader = checkpoint.get('data_loader', None)
 
-				shared_file_list = {}
-
-				if torch.distributed.is_initialized() and get_world_size() > num_files:
-					remainder = get_world_size() % num_files
-					data_file = files[(f_start_id*get_world_size()+get_rank() + remainder*f_start_id)%num_files]
+			overflow_buf = None
+			if args.allreduce_post_accumulation:
+				overflow_buf = torch.cuda.IntTensor([0])
+			
+			for f_id in range(f_start_id + 1 , len(files)):
+				
+   
+				if get_world_size() > num_files:
+					data_file = files[(f_id*get_world_size()+get_rank() + remainder*f_id)%num_files]
 				else:
-					data_file = files[(f_start_id*get_world_size()+get_rank())%num_files]
+					data_file = files[(f_id*get_world_size()+get_rank())%num_files]
 
 				previous_file = data_file
 
-				if restored_data_loader is None:
-					train_data = pretraining_dataset(data_file, args.max_predictions_per_seq)
-					train_sampler = RandomSampler(train_data)
-					train_dataloader = DataLoader(train_data, sampler=train_sampler,
-												  batch_size=args.train_batch_size * args.n_gpu,
-												  num_workers=4, worker_init_fn=worker_init,
-												  pin_memory=True)
-					# shared_file_list["0"] = (train_dataloader, data_file)
-				else:
-					train_dataloader = restored_data_loader
-					restored_data_loader = None
+				dataset_future = pool.submit(create_pretraining_dataset, data_file, args.max_predictions_per_seq, shared_file_list, args, worker_init)
 
-				overflow_buf = None
-				if args.allreduce_post_accumulation:
-					overflow_buf = torch.cuda.IntTensor([0])
-				
-				for f_id in range(f_start_id + 1 , len(files)):
-					
-	   
-					if get_world_size() > num_files:
-						data_file = files[(f_id*get_world_size()+get_rank() + remainder*f_id)%num_files]
-					else:
-						data_file = files[(f_id*get_world_size()+get_rank())%num_files]
+				train_iter = tqdm(train_dataloader, desc="Iteration", disable=args.disable_progress_bar) if is_main_process() else train_dataloader
 
-					previous_file = data_file
-
-					dataset_future = pool.submit(create_pretraining_dataset, data_file, args.max_predictions_per_seq, shared_file_list, args, worker_init)
-
-					train_iter = tqdm(train_dataloader, desc="Iteration", disable=args.disable_progress_bar) if is_main_process() else train_dataloader
-
-					if raw_train_start is None:
-						raw_train_start = time.time()
-					for step, batch in enumerate(train_iter):
-
-						training_steps += 1
-						batch = [t.to(device) for t in batch]
-						input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
-						prediction_scores, seq_relationship_score = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask)
-						loss = criterion(prediction_scores, seq_relationship_score, masked_lm_labels, next_sentence_labels)
-						if args.n_gpu > 1:
-							loss = loss.mean()  # mean() to average on multi-gpu.
-
-						divisor = args.gradient_accumulation_steps
-						if args.gradient_accumulation_steps > 1:
-							if not args.allreduce_post_accumulation:
-								# this division was merged into predivision
-								loss = loss / args.gradient_accumulation_steps
-								divisor = 1.0
-						if args.fp16:
-							with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
-								scaled_loss.backward()
-						else:
-							loss.backward()
-						average_loss += loss.item()
-
-						if training_steps % args.gradient_accumulation_steps == 0:
-							lr_scheduler.step()  # learning rate warmup
-							global_step = take_optimizer_step(args, optimizer, model, overflow_buf, global_step)
-
-						if global_step >= args.steps_this_run or timeout_sent:
-							train_time_raw = time.time() - raw_train_start
-							last_num_steps = int(training_steps / args.gradient_accumulation_steps) % args.log_freq
-							last_num_steps = args.log_freq if last_num_steps == 0 else last_num_steps
-							average_loss = torch.tensor(average_loss, dtype=torch.float32).cuda()
-							average_loss = average_loss / (last_num_steps * divisor)
-							if (torch.distributed.is_initialized()):
-								average_loss /= get_world_size()
-								torch.distributed.all_reduce(average_loss)
-							final_loss = average_loss.item()
-							if is_main_process():
-								dllogger.log(step=(epoch, global_step, ), data={"final_loss": final_loss})
-						elif training_steps % (args.log_freq * args.gradient_accumulation_steps) == 0:
-							if is_main_process():
-								dllogger.log(step=(epoch, global_step, ), data={"average_loss": average_loss / (args.log_freq * divisor),
-																				"step_loss": loss.item() * args.gradient_accumulation_steps / divisor,
-																				"learning_rate": optimizer.param_groups[0]['lr']})
-							average_loss = 0
-
-
-						if global_step >= args.steps_this_run or training_steps % (
-								args.num_steps_per_checkpoint * args.gradient_accumulation_steps) == 0 or timeout_sent:
-							if is_main_process() and not args.skip_checkpoint:
-								# Save a trained model
-								dllogger.log(step="PARAMETER", data={"checkpoint_step": global_step})
-								model_to_save = model.module if hasattr(model,
-																		'module') else model  # Only save the model it-self
-								if args.resume_step < 0 or not args.phase2:
-									output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step))
-								else:
-									output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step + args.phase1_end_step))
-								if args.do_train:
-									torch.save({'model': model_to_save.state_dict(),
-												'optimizer': optimizer.state_dict(),
-												'master params': list(amp.master_params(optimizer)),
-												'files': [f_id] + files,
-												'epoch': epoch,
-												'data_loader': None if global_step >= args.max_steps else train_dataloader}, output_save_file)
-
-									most_recent_ckpts_paths.append(output_save_file)
-									if len(most_recent_ckpts_paths) > 3:
-										ckpt_to_be_removed = most_recent_ckpts_paths.pop(0)
-										os.remove(ckpt_to_be_removed)
-
-							# Exiting the training due to hitting max steps, or being sent a 
-							# timeout from the cluster scheduler
-							if global_step >= args.steps_this_run or timeout_sent or epoch > 100:
-								del train_dataloader
-								# thread.join()
-								return args, final_loss, train_time_raw, global_step
-
-					del train_dataloader
-					# thread.join()
-					# Make sure pool has finished and switch train_dataloader
-					# NOTE: Will block until complete
-					train_dataloader, data_file = dataset_future.result(timeout=None)
-				nvtx.range_pop()
-				epoch += 1
-		else:
-			s = torch.cuda.Stream()
-			torch.cuda.synchronize()
-			with torch.cuda.stream(s):
-				for epoch in range(0,5):
-					thread = None
-					restored_data_loader = None
-					if not args.resume_from_checkpoint or epoch > 0 or (args.phase2 and global_step < 1) or args.init_checkpoint:
-						files = [os.path.join(args.input_dir, f) for f in os.listdir(args.input_dir) if
-								 os.path.isfile(os.path.join(args.input_dir, f)) and 'training' in f]
-						files.sort()
-						num_files = len(files)
-						random.Random(args.seed + epoch).shuffle(files)
-						f_start_id = 0
-					else:
-						f_start_id = checkpoint['files'][0]
-						files = checkpoint['files'][1:]
-						args.resume_from_checkpoint = False
-						num_files = len(files)
-						# may not exist in all checkpoints
-						epoch = checkpoint.get('epoch', 0)
-						restored_data_loader = checkpoint.get('data_loader', None)
-
-					shared_file_list = {}
-
-					if torch.distributed.is_initialized() and get_world_size() > num_files:
-						remainder = get_world_size() % num_files
-						data_file = files[(f_start_id*get_world_size()+get_rank() + remainder*f_start_id)%num_files]
-					else:
-						data_file = files[(f_start_id*get_world_size()+get_rank())%num_files]
-
-					previous_file = data_file
-
-					if restored_data_loader is None:
-						train_data = pretraining_dataset(data_file, args.max_predictions_per_seq)
-						train_sampler = RandomSampler(train_data)
-						train_dataloader = DataLoader(train_data, sampler=train_sampler,
-													  batch_size=args.train_batch_size * args.n_gpu,
-													  num_workers=4, worker_init_fn=worker_init,
-													  pin_memory=True)
-						# shared_file_list["0"] = (train_dataloader, data_file)
-					else:
-						train_dataloader = restored_data_loader
-						restored_data_loader = None
-
-					overflow_buf = None
-					if args.allreduce_post_accumulation:
-						overflow_buf = torch.cuda.IntTensor([0])
-					
-					for f_id in range(f_start_id + 1 , len(files)):
-						
-		   
-						if get_world_size() > num_files:
-							data_file = files[(f_id*get_world_size()+get_rank() + remainder*f_id)%num_files]
-						else:
-							data_file = files[(f_id*get_world_size()+get_rank())%num_files]
-
-						previous_file = data_file
-
-						dataset_future = pool.submit(create_pretraining_dataset, data_file, args.max_predictions_per_seq, shared_file_list, args, worker_init)
-
-						train_iter = tqdm(train_dataloader, desc="Iteration", disable=args.disable_progress_bar) if is_main_process() else train_dataloader
-
-						if raw_train_start is None:
-							raw_train_start = time.time()
-						for step, batch in enumerate(train_iter):
-
-							training_steps += 1
-							batch = [t.to(device) for t in batch]
-							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
-							prediction_scores, seq_relationship_score = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask)
-							loss = criterion(prediction_scores, seq_relationship_score, masked_lm_labels, next_sentence_labels)
-							if args.n_gpu > 1:
-								loss = loss.mean()  # mean() to average on multi-gpu.
-
-							divisor = args.gradient_accumulation_steps
-							if args.gradient_accumulation_steps > 1:
-								if not args.allreduce_post_accumulation:
-									# this division was merged into predivision
-									loss = loss / args.gradient_accumulation_steps
-									divisor = 1.0
-							if args.fp16:
-								with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
-									scaled_loss.backward()
-							else:
-								loss.backward()
-							average_loss += loss.item()
-
-							if training_steps % args.gradient_accumulation_steps == 0:
-								lr_scheduler.step()  # learning rate warmup
-								global_step = take_optimizer_step(args, optimizer, model, overflow_buf, global_step)
-
-							if global_step >= args.steps_this_run or timeout_sent:
-								train_time_raw = time.time() - raw_train_start
-								last_num_steps = int(training_steps / args.gradient_accumulation_steps) % args.log_freq
-								last_num_steps = args.log_freq if last_num_steps == 0 else last_num_steps
-								average_loss = torch.tensor(average_loss, dtype=torch.float32).cuda()
-								average_loss = average_loss / (last_num_steps * divisor)
-								if (torch.distributed.is_initialized()):
-									average_loss /= get_world_size()
-									torch.distributed.all_reduce(average_loss)
-								final_loss = average_loss.item()
-								if is_main_process():
-									dllogger.log(step=(epoch, global_step, ), data={"final_loss": final_loss})
-							elif training_steps % (args.log_freq * args.gradient_accumulation_steps) == 0:
-								if is_main_process():
-									dllogger.log(step=(epoch, global_step, ), data={"average_loss": average_loss / (args.log_freq * divisor),
-																					"step_loss": loss.item() * args.gradient_accumulation_steps / divisor,
-																					"learning_rate": optimizer.param_groups[0]['lr']})
-								average_loss = 0
-
-
-							if global_step >= args.steps_this_run or training_steps % (
-									args.num_steps_per_checkpoint * args.gradient_accumulation_steps) == 0 or timeout_sent:
-								if is_main_process() and not args.skip_checkpoint:
-									# Save a trained model
-									dllogger.log(step="PARAMETER", data={"checkpoint_step": global_step})
-									model_to_save = model.module if hasattr(model,
-																			'module') else model  # Only save the model it-self
-									if args.resume_step < 0 or not args.phase2:
-										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step))
-									else:
-										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step + args.phase1_end_step))
-									if args.do_train:
-										torch.save({'model': model_to_save.state_dict(),
-													'optimizer': optimizer.state_dict(),
-													'master params': list(amp.master_params(optimizer)),
-													'files': [f_id] + files,
-													'epoch': epoch,
-													'data_loader': None if global_step >= args.max_steps else train_dataloader}, output_save_file)
-
-										most_recent_ckpts_paths.append(output_save_file)
-										if len(most_recent_ckpts_paths) > 3:
-											ckpt_to_be_removed = most_recent_ckpts_paths.pop(0)
-											os.remove(ckpt_to_be_removed)
-
-								# Exiting the training due to hitting max steps, or being sent a 
-								# timeout from the cluster scheduler
-								if global_step >= args.steps_this_run or timeout_sent or epoch > 100:
-									del train_dataloader
-									# thread.join()
-									return args, final_loss, train_time_raw, global_step
-
-						del train_dataloader
-						# thread.join()
-						# Make sure pool has finished and switch train_dataloader
-						# NOTE: Will block until complete
-						train_dataloader, data_file = dataset_future.result(timeout=None)
-				for epoch in range(5,6):
-					torch.cuda.empty_cache()
-					g = torch.cuda._Graph()
-					torch.cuda.synchronize()
-					g.capture_begin()
-					thread = None
-					restored_data_loader = None
-					if not args.resume_from_checkpoint or epoch > 0 or (args.phase2 and global_step < 1) or args.init_checkpoint:
-						files = [os.path.join(args.input_dir, f) for f in os.listdir(args.input_dir) if
-								 os.path.isfile(os.path.join(args.input_dir, f)) and 'training' in f]
-						files.sort()
-						num_files = len(files)
-						random.Random(args.seed + epoch).shuffle(files)
-						f_start_id = 0
-					else:
-						f_start_id = checkpoint['files'][0]
-						files = checkpoint['files'][1:]
-						args.resume_from_checkpoint = False
-						num_files = len(files)
-						# may not exist in all checkpoints
-						epoch = checkpoint.get('epoch', 0)
-						restored_data_loader = checkpoint.get('data_loader', None)
-
-					shared_file_list = {}
-
-					if torch.distributed.is_initialized() and get_world_size() > num_files:
-						remainder = get_world_size() % num_files
-						data_file = files[(f_start_id*get_world_size()+get_rank() + remainder*f_start_id)%num_files]
-					else:
-						data_file = files[(f_start_id*get_world_size()+get_rank())%num_files]
-
-					previous_file = data_file
-
-					if restored_data_loader is None:
-						train_data = pretraining_dataset(data_file, args.max_predictions_per_seq)
-						train_sampler = RandomSampler(train_data)
-						train_dataloader = DataLoader(train_data, sampler=train_sampler,
-													  batch_size=args.train_batch_size * args.n_gpu,
-													  num_workers=4, worker_init_fn=worker_init,
-													  pin_memory=True)
-						# shared_file_list["0"] = (train_dataloader, data_file)
-					else:
-						train_dataloader = restored_data_loader
-						restored_data_loader = None
-
-					overflow_buf = None
-					if args.allreduce_post_accumulation:
-						overflow_buf = torch.cuda.IntTensor([0])
-					
-					for f_id in range(f_start_id + 1 , len(files)):
-						
-		   
-						if get_world_size() > num_files:
-							data_file = files[(f_id*get_world_size()+get_rank() + remainder*f_id)%num_files]
-						else:
-							data_file = files[(f_id*get_world_size()+get_rank())%num_files]
-
-						previous_file = data_file
-
-						dataset_future = pool.submit(create_pretraining_dataset, data_file, args.max_predictions_per_seq, shared_file_list, args, worker_init)
-
-						train_iter = tqdm(train_dataloader, desc="Iteration", disable=args.disable_progress_bar) if is_main_process() else train_dataloader
-
-						if raw_train_start is None:
-							raw_train_start = time.time()
-						for step, batch in enumerate(train_iter):
-
-							training_steps += 1
-							batch = [t.to(device) for t in batch]
-							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
-							prediction_scores, seq_relationship_score = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask)
-							loss = criterion(prediction_scores, seq_relationship_score, masked_lm_labels, next_sentence_labels)
-							if args.n_gpu > 1:
-								loss = loss.mean()  # mean() to average on multi-gpu.
-
-							divisor = args.gradient_accumulation_steps
-							if args.gradient_accumulation_steps > 1:
-								if not args.allreduce_post_accumulation:
-									# this division was merged into predivision
-									loss = loss / args.gradient_accumulation_steps
-									divisor = 1.0
-							if args.fp16:
-								with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
-									scaled_loss.backward()
-							else:
-								loss.backward()
-							average_loss += loss.item()
-
-							if training_steps % args.gradient_accumulation_steps == 0:
-								lr_scheduler.step()  # learning rate warmup
-								global_step = take_optimizer_step(args, optimizer, model, overflow_buf, global_step)
-
-							if global_step >= args.steps_this_run or timeout_sent:
-								train_time_raw = time.time() - raw_train_start
-								last_num_steps = int(training_steps / args.gradient_accumulation_steps) % args.log_freq
-								last_num_steps = args.log_freq if last_num_steps == 0 else last_num_steps
-								average_loss = torch.tensor(average_loss, dtype=torch.float32).cuda()
-								average_loss = average_loss / (last_num_steps * divisor)
-								if (torch.distributed.is_initialized()):
-									average_loss /= get_world_size()
-									torch.distributed.all_reduce(average_loss)
-								final_loss = average_loss.item()
-								if is_main_process():
-									dllogger.log(step=(epoch, global_step, ), data={"final_loss": final_loss})
-							elif training_steps % (args.log_freq * args.gradient_accumulation_steps) == 0:
-								if is_main_process():
-									dllogger.log(step=(epoch, global_step, ), data={"average_loss": average_loss / (args.log_freq * divisor),
-																					"step_loss": loss.item() * args.gradient_accumulation_steps / divisor,
-																					"learning_rate": optimizer.param_groups[0]['lr']})
-								average_loss = 0
-
-
-							if global_step >= args.steps_this_run or training_steps % (
-									args.num_steps_per_checkpoint * args.gradient_accumulation_steps) == 0 or timeout_sent:
-								if is_main_process() and not args.skip_checkpoint:
-									# Save a trained model
-									dllogger.log(step="PARAMETER", data={"checkpoint_step": global_step})
-									model_to_save = model.module if hasattr(model,
-																			'module') else model  # Only save the model it-self
-									if args.resume_step < 0 or not args.phase2:
-										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step))
-									else:
-										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step + args.phase1_end_step))
-									if args.do_train:
-										torch.save({'model': model_to_save.state_dict(),
-													'optimizer': optimizer.state_dict(),
-													'master params': list(amp.master_params(optimizer)),
-													'files': [f_id] + files,
-													'epoch': epoch,
-													'data_loader': None if global_step >= args.max_steps else train_dataloader}, output_save_file)
-
-										most_recent_ckpts_paths.append(output_save_file)
-										if len(most_recent_ckpts_paths) > 3:
-											ckpt_to_be_removed = most_recent_ckpts_paths.pop(0)
-											os.remove(ckpt_to_be_removed)
-
-								# Exiting the training due to hitting max steps, or being sent a 
-								# timeout from the cluster scheduler
-								if global_step >= args.steps_this_run or timeout_sent or epoch > 100:
-									del train_dataloader
-									# thread.join()
-									return args, final_loss, train_time_raw, global_step
-
-						del train_dataloader
-						# thread.join()
-						# Make sure pool has finished and switch train_dataloader
-						# NOTE: Will block until complete
-						train_dataloader, data_file = dataset_future.result(timeout=None)
-					g.capture_end()
-
-			nvtx.range_push("replaying")
-			for epoch in range(6,106):
-				g.replay()
+				if raw_train_start is None:
+					raw_train_start = time.time()
+				s = torch.cuda.Stream()
 				torch.cuda.synchronize()
+				with torch.cuda.stream(s):
+					nvtx.range_push("warming up")
+					for step, batch in enumerate(train_iter):
+						if not args.graphs and step < 5:
+							training_steps += 1
+							batch = [t.to(device) for t in batch]
+							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
+							prediction_scores, seq_relationship_score = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask)
+							loss = criterion(prediction_scores, seq_relationship_score, masked_lm_labels, next_sentence_labels)
+							if args.n_gpu > 1:
+								loss = loss.mean()  # mean() to average on multi-gpu.
+
+							divisor = args.gradient_accumulation_steps
+							if args.gradient_accumulation_steps > 1:
+								if not args.allreduce_post_accumulation:
+									# this division was merged into predivision
+									loss = loss / args.gradient_accumulation_steps
+									divisor = 1.0
+							if args.fp16:
+								with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
+									scaled_loss.backward()
+							else:
+								loss.backward()
+							average_loss += loss.item()
+
+							if training_steps % args.gradient_accumulation_steps == 0:
+								lr_scheduler.step()  # learning rate warmup
+								global_step = take_optimizer_step(args, optimizer, model, overflow_buf, global_step)
+
+							if global_step >= args.steps_this_run or timeout_sent:
+								train_time_raw = time.time() - raw_train_start
+								last_num_steps = int(training_steps / args.gradient_accumulation_steps) % args.log_freq
+								last_num_steps = args.log_freq if last_num_steps == 0 else last_num_steps
+								average_loss = torch.tensor(average_loss, dtype=torch.float32).cuda()
+								average_loss = average_loss / (last_num_steps * divisor)
+								if (torch.distributed.is_initialized()):
+									average_loss /= get_world_size()
+									torch.distributed.all_reduce(average_loss)
+								final_loss = average_loss.item()
+								if is_main_process():
+									dllogger.log(step=(epoch, global_step, ), data={"final_loss": final_loss})
+							elif training_steps % (args.log_freq * args.gradient_accumulation_steps) == 0:
+								if is_main_process():
+									dllogger.log(step=(epoch, global_step, ), data={"average_loss": average_loss / (args.log_freq * divisor),
+																					"step_loss": loss.item() * args.gradient_accumulation_steps / divisor,
+																					"learning_rate": optimizer.param_groups[0]['lr']})
+								average_loss = 0
+
+
+							if global_step >= args.steps_this_run or training_steps % (
+									args.num_steps_per_checkpoint * args.gradient_accumulation_steps) == 0 or timeout_sent:
+								if is_main_process() and not args.skip_checkpoint:
+									# Save a trained model
+									dllogger.log(step="PARAMETER", data={"checkpoint_step": global_step})
+									model_to_save = model.module if hasattr(model,
+																			'module') else model  # Only save the model it-self
+									if args.resume_step < 0 or not args.phase2:
+										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step))
+									else:
+										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step + args.phase1_end_step))
+									if args.do_train:
+										torch.save({'model': model_to_save.state_dict(),
+													'optimizer': optimizer.state_dict(),
+													'master params': list(amp.master_params(optimizer)),
+													'files': [f_id] + files,
+													'epoch': epoch,
+													'data_loader': None if global_step >= args.max_steps else train_dataloader}, output_save_file)
+
+										most_recent_ckpts_paths.append(output_save_file)
+										if len(most_recent_ckpts_paths) > 3:
+											ckpt_to_be_removed = most_recent_ckpts_paths.pop(0)
+											os.remove(ckpt_to_be_removed)
+
+								# Exiting the training due to hitting max steps, or being sent a 
+								# timeout from the cluster scheduler
+								if global_step >= args.steps_this_run or timeout_sent or epoch > 100:
+									del train_dataloader
+									# thread.join()
+									return args, final_loss, train_time_raw, global_step
+								
+						else:
+							nvtx.range_pop()
+							torch.cuda.empty_cache()
+							g = torch.cuda._Graph()
+							torch.cuda.synchronize()
+							nvtx.range_push('capturing graph')
+							g.capture_begin()
+							training_steps += 1
+							batch = [t.to(device) for t in batch]
+							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
+							prediction_scores, seq_relationship_score = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask)
+							loss = criterion(prediction_scores, seq_relationship_score, masked_lm_labels, next_sentence_labels)
+							if args.n_gpu > 1:
+								loss = loss.mean()  # mean() to average on multi-gpu.
+
+							divisor = args.gradient_accumulation_steps
+							if args.gradient_accumulation_steps > 1:
+								if not args.allreduce_post_accumulation:
+									# this division was merged into predivision
+									loss = loss / args.gradient_accumulation_steps
+									divisor = 1.0
+							if args.fp16:
+								with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
+									scaled_loss.backward()
+							else:
+								loss.backward()
+							average_loss += loss.item()
+
+							if training_steps % args.gradient_accumulation_steps == 0:
+								lr_scheduler.step()  # learning rate warmup
+								global_step = take_optimizer_step(args, optimizer, model, overflow_buf, global_step)
+
+							if global_step >= args.steps_this_run or timeout_sent:
+								train_time_raw = time.time() - raw_train_start
+								last_num_steps = int(training_steps / args.gradient_accumulation_steps) % args.log_freq
+								last_num_steps = args.log_freq if last_num_steps == 0 else last_num_steps
+								average_loss = torch.tensor(average_loss, dtype=torch.float32).cuda()
+								average_loss = average_loss / (last_num_steps * divisor)
+								if (torch.distributed.is_initialized()):
+									average_loss /= get_world_size()
+									torch.distributed.all_reduce(average_loss)
+								final_loss = average_loss.item()
+								if is_main_process():
+									dllogger.log(step=(epoch, global_step, ), data={"final_loss": final_loss})
+							elif training_steps % (args.log_freq * args.gradient_accumulation_steps) == 0:
+								if is_main_process():
+									dllogger.log(step=(epoch, global_step, ), data={"average_loss": average_loss / (args.log_freq * divisor),
+																					"step_loss": loss.item() * args.gradient_accumulation_steps / divisor,
+																					"learning_rate": optimizer.param_groups[0]['lr']})
+								average_loss = 0
+
+
+							if global_step >= args.steps_this_run or training_steps % (
+									args.num_steps_per_checkpoint * args.gradient_accumulation_steps) == 0 or timeout_sent:
+								if is_main_process() and not args.skip_checkpoint:
+									# Save a trained model
+									dllogger.log(step="PARAMETER", data={"checkpoint_step": global_step})
+									model_to_save = model.module if hasattr(model,
+																			'module') else model  # Only save the model it-self
+									if args.resume_step < 0 or not args.phase2:
+										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step))
+									else:
+										output_save_file = os.path.join(args.output_dir, "ckpt_{}.pt".format(global_step + args.phase1_end_step))
+									if args.do_train:
+										torch.save({'model': model_to_save.state_dict(),
+													'optimizer': optimizer.state_dict(),
+													'master params': list(amp.master_params(optimizer)),
+													'files': [f_id] + files,
+													'epoch': epoch,
+													'data_loader': None if global_step >= args.max_steps else train_dataloader}, output_save_file)
+
+										most_recent_ckpts_paths.append(output_save_file)
+										if len(most_recent_ckpts_paths) > 3:
+											ckpt_to_be_removed = most_recent_ckpts_paths.pop(0)
+											os.remove(ckpt_to_be_removed)
+
+								# Exiting the training due to hitting max steps, or being sent a 
+								# timeout from the cluster scheduler
+								if global_step >= args.steps_this_run or timeout_sent or epoch > 100:
+									del train_dataloader
+									# thread.join()
+									return args, final_loss, train_time_raw, global_step
+							g.capture_end()
+							nvtx.range_pop()
+							torch.cuda.synchronize()
+							break
+				nvtx.range_push('replaying')
+				for _ in range(100):
+					g.replay()
+					torch.cuda.synchronize()
+				nvtx.range_pop()
+				return args, final_loss, train_time_raw, global_step
+				del train_dataloader
+				# thread.join()
+				# Make sure pool has finished and switch train_dataloader
+				# NOTE: Will block until complete
+				train_dataloader, data_file = dataset_future.result(timeout=None)
 			nvtx.range_pop()
-			return args, final_loss, train_time_raw, global_step
+			epoch += 1
+
 		torch.cuda.cudart().cudaProfilerStop()
 
 
