@@ -694,9 +694,11 @@ def main():
 									# this division was merged into predivision
 									loss = loss / args.gradient_accumulation_steps
 									divisor = 1.0
+							torch.cuda.synchronize()
 							if args.fp16:
 								with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
 									scaled_loss.backward()
+
 							else:
 								loss.backward()
 							average_loss += loss.item()
