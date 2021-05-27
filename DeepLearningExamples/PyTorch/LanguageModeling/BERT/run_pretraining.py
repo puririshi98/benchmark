@@ -682,6 +682,7 @@ def main():
 							nvtx.range_push('capturing graph')
 							training_steps += 1
 							batch = [t.to(device) for t in batch]
+							torch.cuda.synchronize()
 							g.capture_begin()
 							prediction_scores, seq_relationship_score = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask)
 							loss = criterion(prediction_scores, seq_relationship_score, masked_lm_labels, next_sentence_labels)
@@ -694,7 +695,7 @@ def main():
 									# this division was merged into predivision
 									loss = loss / args.gradient_accumulation_steps
 									divisor = 1.0
-							torch.cuda.synchronize()
+
 							if args.fp16:
 								with amp.scale_loss(loss, optimizer, delay_overflow_check=args.allreduce_post_accumulation) as scaled_loss:
 									scaled_loss.backward()
