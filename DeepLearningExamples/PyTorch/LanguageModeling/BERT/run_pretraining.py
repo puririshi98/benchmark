@@ -597,7 +597,7 @@ def main():
 				with torch.cuda.stream(s):
 					nvtx.range_push("warming up")
 					for step, batch in enumerate(train_iter):
-						if not args.cudagraphs and step < 5:
+						if (args.cudagraphs and step < 5) or (not args.cudagraphs):
 							training_steps += 1
 							batch = [t.to(device) for t in batch]
 							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
@@ -760,12 +760,13 @@ def main():
 							nvtx.range_pop()
 							torch.cuda.synchronize()
 							break
-				nvtx.range_push('replaying')
-				for _ in range(100):
-					g.replay()
-					torch.cuda.synchronize()
-				nvtx.range_pop()
-				return args, final_loss, train_time_raw, global_step
+				if args.cudagraphs:
+					nvtx.range_push('replaying')
+					for _ in range(100):
+						g.replay()
+						torch.cuda.synchronize()
+					nvtx.range_pop()
+					return args, final_loss, train_time_raw, global_step
 				del train_dataloader
 				# thread.join()
 				# Make sure pool has finished and switch train_dataloader
