@@ -12,5 +12,6 @@ docker run --gpus all -it --rm --ipc=host \
   --ulimit stack=67108864 \
   --privileged \
   -v /mnt/shared/yuya/transformers:/workspace/electra \
+  -v /mnt/dldata/yuya/electra_tf_data/:/workspace/electra/pretraining_data \
   -v /mnt/shared/yuya/dldata/electra_pyt:/workspace/electra/saved_models \
   -v /mnt/dldata/bert_tf2/download:/workspace/data electra:pyt

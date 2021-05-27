@@ -44,9 +44,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-MODEL_TYPES = []  # TODO
-
-
 def set_seed(args):
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -89,12 +86,15 @@ def train(args, train_dataset, model, tokenizer):
     else:
         t_total = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
 
-    # Prepare optimizer and schedule (linear warmup and decay)
+    if args.warmup_proportion is not None:
+        args.warmup_steps = int(t_total * args.warmup_proportion)
+
+        # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
     if args.layerwise_lr_decay > 0:
         layer_depth = _get_layer_depth(model.num_hidden_layers)
         no_decay_parameters = [{"params": [], "weight_decay": 0.0,
-                                "lr": args.learning_rate * args.layerwise_lr_decay ** (model.num_hidden_layers+2-depth)}
+                                "lr": args.learning_rate * args.layerwise_lr_decay**(model.num_hidden_layers+2-depth)}
                                for depth in range(model.num_hidden_layers + 3)]
         weight_decay_parameters = [{"params": [], "weight_decay": args.weight_decay,
                                     "lr": args.learning_rate * args.layerwise_lr_decay**(model.num_hidden_layers+2-depth)}
@@ -172,7 +172,7 @@ def train(args, train_dataset, model, tokenizer):
     # Check if continuing training from a checkpoint
     if os.path.exists(args.model_name_or_path):
         try:
-            # set global_step to gobal_step of last saved checkpoint from model path
+            # set global_step to global_step of last saved checkpoint from model path
             checkpoint_suffix = args.model_name_or_path.split("-")[-1].split("/")[0]
             global_step = int(checkpoint_suffix)
             epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
@@ -231,9 +231,6 @@ def train(args, train_dataset, model, tokenizer):
                     scaled_loss.backward()
             else:
                 loss.backward()
-
-            # if (step) % 100 == 0:
-            #     print('[1,{}]<stdout>:epoch: {} step:{} loss:{}'.format(args.local_rank, epoch, step, outputs[0].item()))
 
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
@@ -460,13 +457,6 @@ def main():
 
     # Required parameters
     parser.add_argument(
-        "--model_type",
-        default=None,
-        type=str,
-        required=True,
-        help="Model type selected in the list: " + ", ".join(MODEL_TYPES),
-    )
-    parser.add_argument(
         "--model_name_or_path",
         default=None,
         type=str,
@@ -569,6 +559,9 @@ def main():
         "--evaluate_during_training", action="store_true", help="Run evaluation during training at each logging step."
     )
     parser.add_argument(
+        "--vocab_file", type=str, help="Location of vocabulary file."
+    )
+    parser.add_argument(
         "--do_lower_case", action="store_true", help="Set this flag if you are using an uncased model."
     )
 
@@ -599,6 +592,7 @@ def main():
         help="If > 0: set total number of training steps to perform. Override num_train_epochs.",
     )
     parser.add_argument("--warmup_steps", default=0, type=int, help="Linear warmup over warmup_steps.")
+    parser.add_argument("--warmup_proportion", default=None, type=float, help="Linear warmup proportion.")
     parser.add_argument(
         "--n_best_size",
         default=20,
@@ -625,8 +619,8 @@ def main():
         help="language id of input for language-specific xlm models (see tokenization_xlm.PRETRAINED_INIT_CONFIGURATION)",
     )
 
-    parser.add_argument("--logging_steps", type=int, default=500, help="Log every X updates steps.")
-    parser.add_argument("--save_steps", type=int, default=500, help="Save checkpoint every X updates steps.")
+    parser.add_argument("--logging_steps", type=int, default=100, help="Log every X updates steps.")
+    parser.add_argument("--save_steps", type=int, default=0, help="Save checkpoint every X updates steps.")
     parser.add_argument(
         "--eval_all_checkpoints",
         action="store_true",
@@ -727,16 +721,23 @@ def main():
         # Make sure only the first process in distributed training will download model & vocab
         torch.distributed.barrier()
 
-    args.model_type = args.model_type.lower()
     config = ElectraConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
-    tokenizer = ElectraTokenizer.from_pretrained(
-        args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
-        do_lower_case=args.do_lower_case,
-        cache_dir=args.cache_dir if args.cache_dir else None,
-    )
+
+    if args.vocab_file is None:
+        tokenizer = ElectraTokenizer.from_pretrained(
+            args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
+            do_lower_case=args.do_lower_case,
+            cache_dir=args.cache_dir if args.cache_dir else None,
+        )
+    else:
+        tokenizer = ElectraTokenizer(
+            vocab_file=args.vocab_file,
+            do_lower_case=args.do_lower_case
+        )
+
 
     config.start_n_top = config.end_n_top = args.beam_size  # pass beam_size to config electra
     if args.joint_prediction:
@@ -835,7 +836,7 @@ def main():
 
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
             results.update(result)
-
+        print("**RESULTS SUMMARY** - EM: {:6.3f}, F1: {:6.3f}".format(results["exact"], results["f1"]))
     logger.info("Results: {}".format(results))
 
     return results

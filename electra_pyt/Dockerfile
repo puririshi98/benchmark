@@ -37,5 +37,5 @@ RUN pip install --upgrade --no-cache-dir pip \
  git+https://github.com/NVIDIA/dllogger
 
 RUN apt-get install -y iputils-ping
-#COPY . .
+COPY . .
 #RUN pip install .

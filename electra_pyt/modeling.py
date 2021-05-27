@@ -10,6 +10,7 @@ from torch.nn import CrossEntropyLoss, MSELoss
 from activations import get_activation
 from configuration import ElectraConfig
 from file_utils import add_start_docstrings, add_start_docstrings_to_callable
+from modeling_utils import init_weights
 from modeling_utils import BertEmbeddings, BertEncoder, BertLayerNorm, BertPreTrainedModel
 
 
@@ -121,6 +122,8 @@ class ElectraEmbeddings(BertEmbeddings):
         # any TensorFlow checkpoint file
         self.LayerNorm = BertLayerNorm(config.embedding_size, eps=config.layer_norm_eps)
 
+        self.apply(lambda m: init_weights(m, config.initializer_range))
+
 
 class ElectraDiscriminatorPredictions(nn.Module):
     """Prediction module for the discriminator, made up of two dense layers."""
@@ -132,11 +135,12 @@ class ElectraDiscriminatorPredictions(nn.Module):
         self.dense_prediction = nn.Linear(config.hidden_size, 1)
         self.config = config
 
+        self.apply(lambda m: init_weights(m, config.initializer_range))
+
     def forward(self, discriminator_hidden_states):
         hidden_states = self.dense(discriminator_hidden_states)
         hidden_states = get_activation(self.config.hidden_act)(hidden_states)
-        logits = self.dense_prediction(hidden_states).squeeze()
-
+        logits = self.dense_prediction(hidden_states).squeeze(-1)
         return logits
 
 
@@ -148,6 +152,8 @@ class ElectraGeneratorPredictions(nn.Module):
 
         self.LayerNorm = BertLayerNorm(config.embedding_size)
         self.dense = nn.Linear(config.hidden_size, config.embedding_size)
+
+        self.apply(lambda m: init_weights(m, config.initializer_range))
 
     def forward(self, generator_hidden_states):
         hidden_states = self.dense(generator_hidden_states)
@@ -236,9 +242,12 @@ class ElectraModel(ElectraPreTrainedModel):
 
     config_class = ElectraConfig
 
-    def __init__(self, config):
+    def __init__(self, config, shared_embeddings=False, input_embeddings=None):
         super().__init__(config)
-        self.embeddings = ElectraEmbeddings(config)
+        if shared_embeddings and input_embeddings is not None:
+            self.embeddings = input_embeddings
+        else:
+            self.embeddings = ElectraEmbeddings(config)
 
         if config.embedding_size != config.hidden_size:
             self.embeddings_project = nn.Linear(config.embedding_size, config.hidden_size)
@@ -341,6 +350,8 @@ class ElectraClassificationHead(nn.Module):
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
+
+        self.apply(lambda m: init_weights(m, config.initializer_range))
 
     def forward(self, features, **kwargs):
         x = features[:, 0, :]  # take <s> token (equiv. to [CLS])
@@ -453,7 +464,11 @@ class ElectraForPreTraining(ElectraPreTrainedModel):
 
         self.electra = ElectraModel(config)
         self.discriminator_predictions = ElectraDiscriminatorPredictions(config)
+
         self.init_weights()
+
+    def get_embeddings(self):
+        return self.electra.embeddings
 
     @add_start_docstrings_to_callable(ELECTRA_INPUTS_DOCSTRING)
     def forward(
@@ -512,7 +527,7 @@ class ElectraForPreTraining(ElectraPreTrainedModel):
         )
         discriminator_sequence_output = discriminator_hidden_states[0]
 
-        logits = self.discriminator_predictions(discriminator_sequence_output, attention_mask)
+        logits = self.discriminator_predictions(discriminator_sequence_output,)
 
         output = (logits,)
 
@@ -542,13 +557,15 @@ class ElectraForPreTraining(ElectraPreTrainedModel):
     ELECTRA_START_DOCSTRING,
 )
 class ElectraForMaskedLM(ElectraPreTrainedModel):
-    def __init__(self, config):
+    def __init__(self, config, shared_embeddings=False, input_embeddings=None):
         super().__init__(config)
 
-        self.electra = ElectraModel(config)
+        self.electra = ElectraModel(config,
+                                    shared_embeddings=shared_embeddings,
+                                    input_embeddings=input_embeddings)
         self.generator_predictions = ElectraGeneratorPredictions(config)
-
         self.generator_lm_head = nn.Linear(config.embedding_size, config.vocab_size)
+
         self.init_weights()
 
     def get_output_embeddings(self):
@@ -802,6 +819,7 @@ class PoolerStartLogits(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, 1)
+        self.apply(lambda m: init_weights(m, config.initializer_range))
 
     def forward(self, hidden_states, p_mask=None):
         """ Args:
@@ -830,6 +848,7 @@ class PoolerEndLogits(nn.Module):
         self.activation = nn.Tanh()
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dense_1 = nn.Linear(config.hidden_size, 1)
+        self.apply(lambda m: init_weights(m, config.initializer_range))
 
     def forward(self, hidden_states, start_states=None, start_positions=None, p_mask=None):
         """ Args:
@@ -875,6 +894,7 @@ class PoolerAnswerClass(nn.Module):
         self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
         self.activation = nn.Tanh()
         self.dense_1 = nn.Linear(config.hidden_size, 1, bias=False)
+        self.apply(lambda m: init_weights(m, config.initializer_range))
 
     def forward(self, hidden_states, start_states=None, start_positions=None, cls_index=None):
         """
