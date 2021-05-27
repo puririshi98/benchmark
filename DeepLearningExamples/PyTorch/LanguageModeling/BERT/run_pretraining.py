@@ -674,7 +674,7 @@ def main():
 									# thread.join()
 									return args, final_loss, train_time_raw, global_step
 								
-						else:
+						elif args.cudagraphs:
 							nvtx.range_pop()
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
