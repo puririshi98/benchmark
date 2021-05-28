@@ -770,18 +770,18 @@ def main():
 						)
 
 						# Last step summary
-						if step == config.num_train_steps:
-							final_metrics = {}
-							for key, v in log_info_dict.items():
-								val = torch.tensor(v, device=device)
-								torch.distributed.all_reduce(val, op=torch.distributed.ReduceOp.SUM)
-								val /= get_world_size()
-								final_metrics[key] = val.item()
-							dllogger.log(step=(), data=log_info_dict, verbosity=0)
-							logger.info(
-								'<FINAL STEP METRICS> Step:{step:6d}, Loss:{total_loss:10.6f}, Gen_loss:{masked_lm_loss:10.6f}, Disc_loss:{disc_loss:10.6f}, Gen_acc:{masked_lm_accuracy:6.2f}, '
-								'Disc_acc:{disc_accuracy:6.2f}, Perf:{train_perf:4.0f},'.format(
-									step=step, **final_metrics))
+						# if step == config.num_train_steps:
+						# 	final_metrics = {}
+						# 	for key, v in log_info_dict.items():
+						# 		val = torch.tensor(v, device=device)
+						# 		torch.distributed.all_reduce(val, op=torch.distributed.ReduceOp.SUM)
+						# 		val /= get_world_size()
+						# 		final_metrics[key] = val.item()
+						# 	dllogger.log(step=(), data=log_info_dict, verbosity=0)
+						# 	logger.info(
+						# 		'<FINAL STEP METRICS> Step:{step:6d}, Loss:{total_loss:10.6f}, Gen_loss:{masked_lm_loss:10.6f}, Disc_loss:{disc_loss:10.6f}, Gen_acc:{masked_lm_accuracy:6.2f}, '
+						# 		'Disc_acc:{disc_accuracy:6.2f}, Perf:{train_perf:4.0f},'.format(
+						# 			step=step, **final_metrics))
 
 						for key, m in metrics.items():
 							train_summary_writer.add_scalar(key, m.result(), step)
