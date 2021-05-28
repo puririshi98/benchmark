@@ -722,11 +722,13 @@ def main():
 
     model.train()
     local_step = 0
+    torch.cuda.cudart().cudaProfilerStart()
     train_start, start_step = time.time(), step - 1
     while step <= config.num_train_steps:
         for dataloader in dataset_iterator:
             if step > config.num_train_steps:
-                break
+                torch.cuda.cudart().cudaProfilerStop()
+                sys.exit()
             for batch in dataloader:
                 batch = tuple(t.to(device) for t in batch)
                 features = {
