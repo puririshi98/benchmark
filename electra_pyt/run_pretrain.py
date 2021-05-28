@@ -14,6 +14,7 @@
 # limitations under the License.
 
 """Pre-trains an ELECTRA model."""
+import torch.cuda.nvtx as nvtx
 
 import time
 import datetime
@@ -203,6 +204,7 @@ class PretrainingModel(nn.Module):
 		super().__init__()
 		# Set up model config
 		self._config = config
+		self.vocab = tokenization.ElectraTokenizer(config.vocab_file, do_lower_case=config.do_lower_case).get_vocab()
 		self.disc_config = ElectraConfig(vocab_size=config.vocab_size,
 										 embedding_size=768,
 										 hidden_size=768,
@@ -232,15 +234,16 @@ class PretrainingModel(nn.Module):
 		config = self._config
 
 		# Mask the input
-		masked_inputs = pretrain_utils.mask(
-			config, pretrain_utils.features_to_inputs(features), config.mask_prob)
+		masked_inputs = pretrain_utils.mask(config, pretrain_utils.features_to_inputs(features), config.mask_prob, self.vocab)
 		# Generator
+		nvtx.range_push("Generator being run")
 		if config.uniform_generator:
 			mlm_output = self._get_masked_lm_output(masked_inputs, None)
 		else:
 			mlm_output = self._get_masked_lm_output(
 				masked_inputs, self.generator)
 		fake_data = self._get_fake_data(masked_inputs, mlm_output.logits)
+		nvtx.range_pop()
 		total_loss = config.gen_weight * mlm_output.loss
 
 		# Discriminator

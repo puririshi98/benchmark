@@ -14,6 +14,7 @@
 # limitations under the License.
 
 """Helpers for preparing pre-training data and supplying them to the model."""
+import torch.cuda.nvtx as nvtx
 
 import six
 import glob
@@ -71,12 +72,14 @@ class DatasetIterator:
         return self
 
     def __next__(self):
+        nvtx.range_push("Data Loader Next")
         dataloader = self.future_dataloader.result(timeout=None)
         self.index += 1
         if self.index >= len(self.input_files):
             self.index = 0
             random.shuffle(self.input_files)
         self.load_future()
+        nvtx.range_pop()
         return dataloader
 
     def load_future(self):
@@ -310,7 +313,7 @@ def _get_candidates_mask(inputs: Inputs, vocab,
     return candidates_mask
 
 
-def mask(config, inputs, mask_prob, proposal_distribution=1.0,
+def mask(config, inputs, mask_prob,vocab, proposal_distribution=1.0,
          disallow_from_mask=None, already_masked=None):
     """Implementation of dynamic masking. The optional arguments aren't needed for
     BERT/ELECTRA and are from early experiments in "strategically" masking out
@@ -333,8 +336,6 @@ def mask(config, inputs, mask_prob, proposal_distribution=1.0,
     B, L = inputs.input_ids.size()
 
     # Find indices where masking out a token is allowed
-    vocab = tokenization.ElectraTokenizer(
-        config.vocab_file, do_lower_case=config.do_lower_case).get_vocab()
     candidates_mask = _get_candidates_mask(inputs, vocab, disallow_from_mask)
 
     # Set the number of tokens to mask out per example
