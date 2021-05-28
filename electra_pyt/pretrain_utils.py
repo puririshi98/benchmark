@@ -72,14 +72,12 @@ class DatasetIterator:
         return self
 
     def __next__(self):
-        nvtx.range_push("Data Loader Next")
         dataloader = self.future_dataloader.result(timeout=None)
         self.index += 1
         if self.index >= len(self.input_files):
             self.index = 0
             random.shuffle(self.input_files)
         self.load_future()
-        nvtx.range_pop()
         return dataloader
 
     def load_future(self):

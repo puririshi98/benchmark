@@ -733,7 +733,10 @@ def main():
 				if step > config.num_train_steps:
 					torch.cuda.cudart().cudaProfilerStop()
 					sys.exit()
+				nvtx.range_push("First dataload")
+				first=True
 				for batch in dataloader:
+					nvtx.range_pop()
 					batch = tuple(t.to(device) for t in batch)
 					features = {
 						"input_ids": batch[0],
@@ -802,9 +805,11 @@ def main():
 						# 	logger.info(f" ** Saved model checkpoint for step {step}")
 
 						step = opt_step
+					nvtx.range_push("dataload")
 					if step > config.num_train_steps:
 						torch.cuda.cudart().cudaProfilerStop()
 						sys.exit()
+
 
 	train_summary_writer.flush()
 	train_summary_writer.close()
