@@ -33,7 +33,7 @@ from torch.utils.tensorboard import SummaryWriter
 # from apex import amp
 from apex.optimizers import FusedAdam, FusedLAMB
 
-import pretrain_utils2
+import pretrain_utils2 as pretrain_utils
 import utils
 from utils import log, get_rank, get_world_size, is_main_process, barrier
 from configuration import ElectraConfig
