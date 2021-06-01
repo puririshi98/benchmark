@@ -232,8 +232,7 @@ class PretrainingModel(nn.Module):
         config = self._config
 
         # Mask the input
-        masked_inputs = pretrain_utils.mask(
-            config, pretrain_utils.features_to_inputs(features), config.mask_prob)
+        masked_inputs = pretrain_utils.mask(config, pretrain_utils.features_to_inputs(features), config.mask_prob)
         # Generator
         if config.uniform_generator:
             mlm_output = self._get_masked_lm_output(masked_inputs, None)
