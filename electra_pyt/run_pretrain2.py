@@ -789,10 +789,10 @@ def main():
 
                         dllogger.flush()
 
-                    if config.save_checkpoints_steps > 0 and step != opt_step and \
-                            ((step % config.save_checkpoints_steps == 0 and step > 0) or step == config.num_train_steps):
-                        save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, step)
-                        logger.info(f" ** Saved model checkpoint for step {step}")
+                    # if config.save_checkpoints_steps > 0 and step != opt_step and \
+                    #         ((step % config.save_checkpoints_steps == 0 and step > 0) or step == config.num_train_steps):
+                    #     save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, step)
+                    #     logger.info(f" ** Saved model checkpoint for step {step}")
 
                     step = opt_step
                 if step > config.num_train_steps:
