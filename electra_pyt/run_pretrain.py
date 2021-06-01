@@ -44,7 +44,7 @@ import torch.cuda.profiler as profiler
 from dllogger import JSONStreamBackend
 import dllogger
 import json
-
+from torch.nn.parallel import DistributedDataParallel as DDP
 logger = logging.getLogger(__name__)
 
 torch._C._jit_set_profiling_executor(False)
@@ -709,7 +709,7 @@ def main():
 
 	# multi-gpu training (should be after apex fp16 initialization)
 	if config.n_gpu > 1:
-		model = torch.nn.DistributedDataParallel(model)
+		model = DDP(model)
 
 	# Distributed training (should be after apex fp16 initialization)
 	if args.local_rank != -1:
