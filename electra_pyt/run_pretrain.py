@@ -527,15 +527,15 @@ class data_prefetcher():
 		try:
 			batch= tuple(t for t in next(self.loader))
 			self.features = {
-				"input_ids": batch[0],
-				"input_mask": batch[1],
-				"segment_ids": batch[2],
+				"input_ids": batch[0].cuda(non_blocking=True),
+				"input_mask": batch[1].cuda(non_blocking=True),
+				"segment_ids": batch[2].cuda(non_blocking=True),
 			}
 		except StopIteration:
 			self.features = None
 			return
 		with torch.cuda.stream(self.stream):
-			self.features = self.features.cuda(non_blocking=True)
+			self.features = self.features
 
 	def next(self):
 		torch.cuda.current_stream().wait_stream(self.stream)
