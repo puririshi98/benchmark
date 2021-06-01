@@ -619,7 +619,7 @@ def main():
 	# Setup CUDA, GPU & distributed training
 	if args.local_rank == -1 or args.no_cuda:
 		device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-		args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
+		args.n_gpu = 0 if args.no_cuda else 1
 	else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
 		torch.cuda.set_device(args.local_rank)
 		device = torch.device("cuda", args.local_rank)
@@ -709,6 +709,7 @@ def main():
 
 	# multi-gpu training (should be after apex fp16 initialization)
 	if config.n_gpu > 1:
+
 		model = DDP(model)
 
 	# Distributed training (should be after apex fp16 initialization)
