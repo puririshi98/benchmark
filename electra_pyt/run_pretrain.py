@@ -541,7 +541,9 @@ class data_prefetcher():
 		torch.cuda.current_stream().wait_stream(self.stream)
 		feats = self.features
 		if feats is not None:
-			feats.record_stream(torch.cuda.current_stream())
+			feats[0].record_stream(torch.cuda.current_stream())
+			feats[1].record_stream(torch.cuda.current_stream())
+			feats[2].record_stream(torch.cuda.current_stream())
 		self.preload()
 		return feats
 
