@@ -14,8 +14,6 @@
 # limitations under the License.
 
 """Helpers for preparing pre-training data and supplying them to the model."""
-import torch.cuda.nvtx as nvtx
-
 import six
 import glob
 import h5py
