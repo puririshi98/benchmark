@@ -112,7 +112,7 @@ class PretrainingConfig(object):
 
 		# device
 		self.local_rank = -1
-		self.n_gpu = torch.cuda.device_count()
+		self.n_gpu = n_gpu
 		self.no_cuda = True
 
 		# amp
@@ -612,6 +612,7 @@ def main():
 
 	parser.add_argument("--no_cuda", action="store_true", help="Whether not to use CUDA when available")
 	parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
+	parser.add_argument("--single_gpu", action="store_true", default=False, help="just use 1 gpu")
 
 	args = parser.parse_args()
 
@@ -624,7 +625,10 @@ def main():
 		device = torch.device("cuda", args.local_rank)
 		torch.distributed.init_process_group(backend="nccl")
 		args.n_gpu = 1
-
+	if args.single_gpu:
+		args.n_gpu = 1
+	else:
+		args.n_gpu	= torch.cuda.device_count()
 	# Set seed
 	set_seed(args)
 
