@@ -708,7 +708,7 @@ def main():
 
 	# multi-gpu training (should be after apex fp16 initialization)
 	if config.n_gpu > 1:
-		model = torch.nn.DataParallel(model)
+		model = torch.nn.DistributedDataParallel(model)
 
 	# Distributed training (should be after apex fp16 initialization)
 	if args.local_rank != -1:
