@@ -516,6 +516,36 @@ def save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, ste
 					},
 				   os.path.join(output_dir, "checkpoint.pt"))
 
+
+class data_prefetcher():
+	def __init__(self, loader):
+		self.loader = iter(loader)
+		self.stream = torch.cuda.Stream()
+		self.preload()
+
+	def preload(self):
+		try:
+			batch= tuple(t for t in next(self.loader))
+			self.features = {
+				"input_ids": batch[0],
+				"input_mask": batch[1],
+				"segment_ids": batch[2],
+			}
+		except StopIteration:
+			self.features = None
+			return
+		with torch.cuda.stream(self.stream):
+			self.features = self.features.cuda(non_blocking=True)
+
+	def next(self):
+		torch.cuda.current_stream().wait_stream(self.stream)
+		feats = self.features
+		if feats is not None:
+			feats.record_stream(torch.cuda.current_stream())
+		self.preload()
+		return feats
+
+
 def main():
 	# Parse essential argumentss
 	parser = argparse.ArgumentParser()
@@ -735,15 +765,10 @@ def main():
 					sys.exit()
 				nvtx.range_push("First dataload")
 				first=True
-				for batch in dataloader:
+				fetcher = data_prefetcher(dataloader)
+				features = fetcher.next()
+				while features is not None:
 					nvtx.range_pop()
-					batch = tuple(t.to(device) for t in batch)
-					features = {
-						"input_ids": batch[0],
-						"input_mask": batch[1],
-						"segment_ids": batch[2],
-					}
-
 					local_step += 1
 					iter_start = time.time()
 
@@ -806,9 +831,11 @@ def main():
 
 						step = opt_step
 					nvtx.range_push("dataload")
+
 					if step > config.num_train_steps:
 						torch.cuda.cudart().cudaProfilerStop()
 						sys.exit()
+					features = fetcher.next()
 
 
 	train_summary_writer.flush()
