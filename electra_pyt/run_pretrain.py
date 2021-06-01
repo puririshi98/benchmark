@@ -541,9 +541,9 @@ class data_prefetcher():
 		torch.cuda.current_stream().wait_stream(self.stream)
 		feats = self.features
 		if feats is not None:
-			feats[0].record_stream(torch.cuda.current_stream())
-			feats[1].record_stream(torch.cuda.current_stream())
-			feats[2].record_stream(torch.cuda.current_stream())
+			feats["input_ids"].record_stream(torch.cuda.current_stream())
+			feats["input_mask"].record_stream(torch.cuda.current_stream())
+			feats["segment_ids"].record_stream(torch.cuda.current_stream())
 		self.preload()
 		return feats
 
