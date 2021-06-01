@@ -708,13 +708,13 @@ def main():
 	)
 
 	# multi-gpu training (should be after apex fp16 initialization)
-	if config.n_gpu > 1:
+	if config.n_gpu > 1 and args.local_rank==-1:
 
-		model = DDP(model)
+		model = torch.nn.DataParallel(model)
 
 	# Distributed training (should be after apex fp16 initialization)
 	if args.local_rank != -1:
-		model = torch.nn.parallel.DistributedDataParallel(
+		model = DDP(
 			model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True
 		)
 
