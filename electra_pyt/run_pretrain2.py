@@ -43,7 +43,7 @@ import torch.cuda.profiler as profiler
 from dllogger import JSONStreamBackend
 import dllogger
 import json
-
+import sys
 logger = logging.getLogger(__name__)
 
 torch._C._jit_set_profiling_executor(False)
