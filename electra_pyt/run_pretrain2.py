@@ -591,7 +591,8 @@ def main():
 
 	# Set seed
 	set_seed(args)
-
+	torch.manual_seed(5)
+	torch.cuda.manual_seed(5)
 	config = PretrainingConfig(**args.__dict__)
 	args.log_dir = config.log_dir
 
