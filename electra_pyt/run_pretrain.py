@@ -772,7 +772,6 @@ def main():
 			fetcher = data_prefetcher(dataloader)
 			features = fetcher.next()
 			while features is not None:
-				nvtx.range_pop()
 				local_step += 1
 				iter_start = time.time()
 
