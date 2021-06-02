@@ -521,7 +521,7 @@ class data_prefetcher():
 
 	def preload(self):
 		try:
-			self.batch= tuple(t for t in next(self.loader))
+			batch= tuple(t for t in next(self.loader))
 			self.features = {
 				"input_ids": batch[0].cuda(non_blocking=True),
 				"input_mask": batch[1].cuda(non_blocking=True),
