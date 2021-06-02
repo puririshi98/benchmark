@@ -532,7 +532,8 @@ class data_prefetcher():
 
 	def next(self):
 		torch.cuda.current_stream().wait_stream(self.stream)
-		if feats is not None:
+		feats=None
+		if self.batch is not None:
 			feats = {
 			"input_ids": self.batch[0].record_stream(torch.cuda.current_stream()),
 			"input_mask": self.batch[1].record_stream(torch.cuda.current_stream()),
