@@ -110,7 +110,7 @@ class PretrainingConfig(object):
 
 		# device
 		self.local_rank = -1
-		self.n_gpu = torch.cuda.device_count()
+		self.n_gpu = 1
 		self.no_cuda = True
 
 		# amp
@@ -514,32 +514,30 @@ def save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, ste
 
 
 class data_prefetcher():
-	def __init__(self, loader):
+	def __init__(self, loader, device):
 		self.loader = iter(loader)
 		self.stream = torch.cuda.Stream()
+		self.device = device
 		self.preload()
+
 
 	def preload(self):
 		try:
-			batch= tuple(t for t in next(self.loader))
-			self.features = {
-				"input_ids": batch[0].cuda(non_blocking=True),
-				"input_mask": batch[1].cuda(non_blocking=True),
-				"segment_ids": batch[2].cuda(non_blocking=True),
-			}
+			self.batch = next(self.loader)
 		except StopIteration:
-			self.features = None
+			self.batch = None
 			return
 		with torch.cuda.stream(self.stream):
-			self.features = self.features
+			self.batch= tuple(t.to(self.device, non_blocking=True) for t in self.batch)
 
 	def next(self):
 		torch.cuda.current_stream().wait_stream(self.stream)
-		feats = self.features
 		if feats is not None:
-			feats["input_ids"].record_stream(torch.cuda.current_stream())
-			feats["input_mask"].record_stream(torch.cuda.current_stream())
-			feats["segment_ids"].record_stream(torch.cuda.current_stream())
+			feats = {
+			"input_ids": self.batch[0].record_stream(torch.cuda.current_stream()),
+			"input_mask": self.batch[1].record_stream(torch.cuda.current_stream()),
+			"segment_ids": self.batch[2].record_stream(torch.cuda.current_stream())
+			}
 		self.preload()
 		return feats
 
