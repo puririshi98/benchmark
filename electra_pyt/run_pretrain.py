@@ -767,7 +767,7 @@ def main():
 				# torch.cuda.cudart().cudaProfilerStop()
 				sys.exit()
 			first=True
-			fetcher = data_prefetcher(dataloader)
+			fetcher = data_prefetcher(dataloader, device)
 			features = fetcher.next()
 			while features is not None:
 				local_step += 1
