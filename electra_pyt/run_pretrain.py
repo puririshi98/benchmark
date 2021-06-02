@@ -528,7 +528,7 @@ class data_prefetcher():
 			self.batch = None
 			return
 		with torch.cuda.stream(self.stream):
-			self.batch= tuple(t.to(self.device, non_blocking=True) for t in self.batch)
+			self.batch= tuple(t.cuda(non_blocking=True) for t in self.batch)
 
 	def next(self):
 		torch.cuda.current_stream().wait_stream(self.stream)
