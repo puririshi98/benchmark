@@ -781,14 +781,15 @@ def main():
 						if warm_ct == 0:
 							s = torch.cuda.Stream()
 							torch.cuda.synchronize()
+							s1 = torch.cuda.stream(s)
 						warm_ct +=1
-						with torch.cuda.stream(s):
+						with s1:
 							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 						if warm_ct>=5:
 							warming_up = False
 							capturing=True
 					elif capturing:
-						with torch.cuda.stream(s):
+						with s1:
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
 							torch.cuda.synchronize()
