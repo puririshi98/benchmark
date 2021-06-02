@@ -838,7 +838,6 @@ def main():
 						#   logger.info(f" ** Saved model checkpoint for step {step}")
 
 						step = opt_step
-					nvtx.range_push("dataload")
 
 					if step > config.num_train_steps:
 						torch.cuda.cudart().cudaProfilerStop()
