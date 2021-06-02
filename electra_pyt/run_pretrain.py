@@ -519,25 +519,27 @@ class data_prefetcher():
 		self.stream = torch.cuda.Stream()
 		self.preload()
 
-
 	def preload(self):
 		try:
-			self.batch = next(self.loader)
+			self.batch= tuple(t for t in next(self.loader))
+			self.features = {
+				"input_ids": batch[0].cuda(non_blocking=True),
+				"input_mask": batch[1].cuda(non_blocking=True),
+				"segment_ids": batch[2].cuda(non_blocking=True),
+			}
 		except StopIteration:
-			self.batch = None
+			self.features = None
 			return
 		with torch.cuda.stream(self.stream):
-			self.batch= tuple(t.cuda(non_blocking=True) for t in self.batch)
+			self.features = self.features
 
 	def next(self):
 		torch.cuda.current_stream().wait_stream(self.stream)
-		feats=None
-		if self.batch is not None:
-			feats = {
-			"input_ids": self.batch[0].record_stream(torch.cuda.current_stream()),
-			"input_mask": self.batch[1].record_stream(torch.cuda.current_stream()),
-			"segment_ids": self.batch[2].record_stream(torch.cuda.current_stream())
-			}
+		feats = self.features
+		if feats is not None:
+			feats["input_ids"].record_stream(torch.cuda.current_stream())
+			feats["input_mask"].record_stream(torch.cuda.current_stream())
+			feats["segment_ids"].record_stream(torch.cuda.current_stream())
 		self.preload()
 		return feats
 
