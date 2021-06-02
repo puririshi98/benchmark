@@ -607,6 +607,7 @@ def main():
 						help="Whether to apply vocab padding")
 
 	parser.add_argument("--no_cuda", action="store_true", help="Whether not to use CUDA when available")
+	parser.add_argument("--graphs", action="store_true", help="Whether to use CUDA GRAPHS when available")
 	parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
 
 
@@ -759,6 +760,7 @@ def main():
 	model.train()
 	local_step = 0
 	warming_up=True
+	warm_ct = 0
 	capturing=False
 	replaying=False
 	# torch.cuda.cudart().cudaProfilerStart()
@@ -774,9 +776,32 @@ def main():
 			while features is not None:
 				local_step += 1
 				iter_start = time.time()
-
-				total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
-
+				if args.graphs:
+					if warming_up:
+						if warm_ct == 0:
+							s = torch.cuda.Stream()
+							torch.cuda.synchronize()
+						warm_ct +=1
+						with torch.cuda.stream(s):
+							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+						if warm_ct>=5:
+							warming_up = False
+							capturing=True
+					elif capturing:
+						with torch.cuda.stream(s):
+							torch.cuda.empty_cache()
+							g = torch.cuda._Graph()
+							torch.cuda.synchronize()
+							g.capture_begin()
+							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+							g.capture_end()
+						capturing=False
+						replaying=True
+					else:
+						g.replay()
+						torch.cuda.synchronize()
+				else:
+					total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 				metrics["train_perf"].update(
 					config.train_batch_size * get_world_size() / (time.time() - iter_start))
 				metrics["total_loss"].update(values=total_loss)
