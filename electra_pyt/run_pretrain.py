@@ -25,6 +25,7 @@ import collections
 import itertools
 import sys
 import torch
+import torch.cuda.nvtx as nvtx
 import numpy as np
 from torch import Tensor, device, dtype, nn
 from torch.nn import functional as F
@@ -838,6 +839,7 @@ def main():
 						#   logger.info(f" ** Saved model checkpoint for step {step}")
 
 						step = opt_step
+					nvtx.range_push("dataload")
 
 					if step > config.num_train_steps:
 						torch.cuda.cudart().cudaProfilerStop()
