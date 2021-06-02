@@ -514,10 +514,9 @@ def save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, ste
 
 
 class data_prefetcher():
-	def __init__(self, loader, device):
+	def __init__(self, loader):
 		self.loader = iter(loader)
 		self.stream = torch.cuda.Stream()
-		self.device = device
 		self.preload()
 
 
