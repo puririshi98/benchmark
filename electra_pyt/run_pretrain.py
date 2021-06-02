@@ -111,7 +111,7 @@ class PretrainingConfig(object):
 
 		# device
 		self.local_rank = -1
-		self.n_gpu = 1
+		self.n_gpu = torch.cuda.device_count()
 		self.no_cuda = True
 
 		# amp
