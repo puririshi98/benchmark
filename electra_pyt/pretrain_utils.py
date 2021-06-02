@@ -108,7 +108,7 @@ def create_dataset(input_file, max_seq_length, batch_size, worker_init, num_cpu_
         num_workers=num_cpu_threads,
         worker_init_fn=worker_init,
         drop_last=True,
-        pin_memory=True)
+        pin_memory=False)
     return dataloader
 
 
