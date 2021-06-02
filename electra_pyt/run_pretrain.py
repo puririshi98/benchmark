@@ -25,7 +25,6 @@ import collections
 import itertools
 import sys
 import torch
-import torch.cuda.nvtx as nvtx
 import numpy as np
 from torch import Tensor, device, dtype, nn
 from torch.nn import functional as F
@@ -235,14 +234,12 @@ class PretrainingModel(nn.Module):
 		# Mask the input
 		masked_inputs = pretrain_utils.mask(config, pretrain_utils.features_to_inputs(features), config.mask_prob, self.vocab)
 		# Generator
-		nvtx.range_push("Generator being run")
 		if config.uniform_generator:
 			mlm_output = self._get_masked_lm_output(masked_inputs, None)
 		else:
 			mlm_output = self._get_masked_lm_output(
 				masked_inputs, self.generator)
 		fake_data = self._get_fake_data(masked_inputs, mlm_output.logits)
-		nvtx.range_pop()
 		total_loss = config.gen_weight * mlm_output.loss
 
 		# Discriminator
@@ -766,85 +763,82 @@ def main():
 	replaying=False
 	torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
-	with torch.autograd.profiler.emit_nvtx(record_shapes=True):
-		while step <= config.num_train_steps:
-			for dataloader in dataset_iterator:
+	while step <= config.num_train_steps:
+		for dataloader in dataset_iterator:
+			if step > config.num_train_steps:
+				torch.cuda.cudart().cudaProfilerStop()
+				sys.exit()
+			first=True
+			fetcher = data_prefetcher(dataloader)
+			features = fetcher.next()
+			while features is not None:
+				nvtx.range_pop()
+				local_step += 1
+				iter_start = time.time()
+
+				total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+
+				metrics["train_perf"].update(
+					config.train_batch_size * get_world_size() / (time.time() - iter_start))
+				metrics["total_loss"].update(values=total_loss)
+				metric_fn(config, metrics, eval_fn_inputs)
+
+				if local_step % config.gradient_accumulation_steps == 0:
+					# Sync up optimizer step, scheduler step and global step (later)
+					opt_step = optimizer.param_groups[0]["step"] if "step" in optimizer.param_groups[0] else 0
+					scheduler.last_epoch = opt_step
+
+					if config.log_freq > 0 and step != opt_step and (
+							step % config.log_freq == 0 or step == config.num_train_steps):
+						log_info_dict = {k:v.result() for k, v in metrics.items()}
+						dllogger.log(step=step, data=log_info_dict, verbosity=0)
+						print(
+							'Step:{step:6d}, Loss:{total_loss:10.6f}, Gen_loss:{masked_lm_loss:10.6f}, Disc_loss:{'
+							'disc_loss:10.6f}, Gen_acc:{masked_lm_accuracy:6.2f}, '
+							'Disc_acc:{disc_accuracy:6.2f}, Perf:{train_perf:4.0f}, Loss Scaler: {loss_scale}, '
+							'Elapsed: {elapsed}, ETA: {eta}'.format(
+								step=step,
+								**log_info_dict,
+								loss_scale=scaler.get_scale(),
+								elapsed=utils.get_readable_time(time.time() - train_start),
+								eta=utils.get_readable_time(
+									(time.time() - train_start) / (step - start_step) * (config.num_train_steps - step)))
+						)
+
+						# Last step summary
+						# if step == config.num_train_steps:
+						#   final_metrics = {}
+						#   for key, v in log_info_dict.items():
+						#       val = torch.tensor(v, device=device)
+						#       torch.distributed.all_reduce(val, op=torch.distributed.ReduceOp.SUM)
+						#       val /= get_world_size()
+						#       final_metrics[key] = val.item()
+						#   dllogger.log(step=(), data=log_info_dict, verbosity=0)
+						#   logger.info(
+						#       '<FINAL STEP METRICS> Step:{step:6d}, Loss:{total_loss:10.6f}, Gen_loss:{masked_lm_loss:10.6f}, Disc_loss:{disc_loss:10.6f}, Gen_acc:{masked_lm_accuracy:6.2f}, '
+						#       'Disc_acc:{disc_accuracy:6.2f}, Perf:{train_perf:4.0f},'.format(
+						#           step=step, **final_metrics))
+
+						for key, m in metrics.items():
+							train_summary_writer.add_scalar(key, m.result(), step)
+						train_summary_writer.add_scalar("lr", scheduler.get_last_lr()[0], step)
+
+						for m in metrics.values():
+							m.reset()
+
+						dllogger.flush()
+
+					# if config.save_checkpoints_steps > 0 and step != opt_step and \
+					#       ((step % config.save_checkpoints_steps == 0 and step > 0) or step == config.num_train_steps):
+					#   save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, step)
+					#   logger.info(f" ** Saved model checkpoint for step {step}")
+
+					step = opt_step
+
 				if step > config.num_train_steps:
 					torch.cuda.cudart().cudaProfilerStop()
 					sys.exit()
-				nvtx.range_push("First dataload")
-				first=True
-				fetcher = data_prefetcher(dataloader)
 				features = fetcher.next()
-				while features is not None:
-					nvtx.range_pop()
-					local_step += 1
-					iter_start = time.time()
-
-					total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
-
-					metrics["train_perf"].update(
-						config.train_batch_size * get_world_size() / (time.time() - iter_start))
-					metrics["total_loss"].update(values=total_loss)
-					metric_fn(config, metrics, eval_fn_inputs)
-
-					if local_step % config.gradient_accumulation_steps == 0:
-						# Sync up optimizer step, scheduler step and global step (later)
-						opt_step = optimizer.param_groups[0]["step"] if "step" in optimizer.param_groups[0] else 0
-						scheduler.last_epoch = opt_step
-
-						if config.log_freq > 0 and step != opt_step and (
-								step % config.log_freq == 0 or step == config.num_train_steps):
-							log_info_dict = {k:v.result() for k, v in metrics.items()}
-							dllogger.log(step=step, data=log_info_dict, verbosity=0)
-							print(
-								'Step:{step:6d}, Loss:{total_loss:10.6f}, Gen_loss:{masked_lm_loss:10.6f}, Disc_loss:{'
-								'disc_loss:10.6f}, Gen_acc:{masked_lm_accuracy:6.2f}, '
-								'Disc_acc:{disc_accuracy:6.2f}, Perf:{train_perf:4.0f}, Loss Scaler: {loss_scale}, '
-								'Elapsed: {elapsed}, ETA: {eta}'.format(
-									step=step,
-									**log_info_dict,
-									loss_scale=scaler.get_scale(),
-									elapsed=utils.get_readable_time(time.time() - train_start),
-									eta=utils.get_readable_time(
-										(time.time() - train_start) / (step - start_step) * (config.num_train_steps - step)))
-							)
-
-							# Last step summary
-							# if step == config.num_train_steps:
-							#   final_metrics = {}
-							#   for key, v in log_info_dict.items():
-							#       val = torch.tensor(v, device=device)
-							#       torch.distributed.all_reduce(val, op=torch.distributed.ReduceOp.SUM)
-							#       val /= get_world_size()
-							#       final_metrics[key] = val.item()
-							#   dllogger.log(step=(), data=log_info_dict, verbosity=0)
-							#   logger.info(
-							#       '<FINAL STEP METRICS> Step:{step:6d}, Loss:{total_loss:10.6f}, Gen_loss:{masked_lm_loss:10.6f}, Disc_loss:{disc_loss:10.6f}, Gen_acc:{masked_lm_accuracy:6.2f}, '
-							#       'Disc_acc:{disc_accuracy:6.2f}, Perf:{train_perf:4.0f},'.format(
-							#           step=step, **final_metrics))
-
-							for key, m in metrics.items():
-								train_summary_writer.add_scalar(key, m.result(), step)
-							train_summary_writer.add_scalar("lr", scheduler.get_last_lr()[0], step)
-
-							for m in metrics.values():
-								m.reset()
-
-							dllogger.flush()
-
-						# if config.save_checkpoints_steps > 0 and step != opt_step and \
-						#       ((step % config.save_checkpoints_steps == 0 and step > 0) or step == config.num_train_steps):
-						#   save_checkpoint(config, checkpoints, model, optimizer, dataset_iterator, step)
-						#   logger.info(f" ** Saved model checkpoint for step {step}")
-
-						step = opt_step
-					nvtx.range_push("dataload")
-
-					if step > config.num_train_steps:
-						torch.cuda.cudart().cudaProfilerStop()
-						sys.exit()
-					features = fetcher.next()
 
 
 	train_summary_writer.flush()
