@@ -392,7 +392,7 @@ def sample_from_softmax(logits):
     tensorshape = tensor_to_one_hot.size()
     # print(tensorshape)
     one_hot = torch.zeros(list(tensorshape) + [logits.shape[-1]], device=torch.cuda.current_device())
-    one_hot.scatter_(2, tensor_to_one_hot.view(tensorshape[0], tensorshape[1],1), 1)
+    one_hot.scatter_(2, tensor_to_one_hot.reshape(tensorshape[0], tensorshape[1],1), 1)
     return one_hot
 
 
