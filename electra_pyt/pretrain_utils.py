@@ -388,7 +388,7 @@ def sample_from_softmax(logits):
     uniform_noise = torch.rand(logits.size(), device=logits.device)
     gumbel_noise = -torch.log(-torch.log(uniform_noise + 1e-9) + 1e-9)
     tensor_to_one_hot = torch.argmax(F.softmax(logits + gumbel_noise, dim=-1), dim=-1).to(torch.int64)
-    one_hot = F.one_hot(logits_to_one_hot,logits.shape[-1])
+    one_hot = F.one_hot(tensor_to_one_hot,logits.shape[-1])
     # tensorshape = tensor_to_one_hot.size()
     # # print(tensorshape)
     # one_hot = torch.zeros(list(tensorshape) + [logits.shape[-1]], device=torch.cuda.current_device())
