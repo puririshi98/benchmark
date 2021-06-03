@@ -782,12 +782,14 @@ def main():
 						with torch.cuda.stream(s):
 							for _ in range(5):
 								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+								local_step+=1
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
 							torch.cuda.synchronize()
 							g.capture_begin()
 							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 							g.capture_end()
+							local_step+=1
 						warming_up=False
 						replaying=True
 					else:
