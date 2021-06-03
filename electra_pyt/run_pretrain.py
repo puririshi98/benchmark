@@ -422,15 +422,17 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, cl
 				scaler.unscale_(optimizer)
 				# Since the gradients of optimizer's assigned params are unscaled, clips as usual:
 				torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
-			scheduler.step()  # Update learning rate schedule
 			scaler.step(optimizer)
 			scaler.update()
+			scheduler.step()  # Update learning rate schedule
+
 		else:
 			total_loss.backward()
 			if config.optimizer.lower() == "adam":
 				torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
-			scheduler.step()  # Update learning rate schedule
 			optimizer.step()
+			scheduler.step()  # Update learning rate schedule
+
 
 		# model.zero_grad()
 		for param in model.parameters():
