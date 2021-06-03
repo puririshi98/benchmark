@@ -288,10 +288,10 @@ class PretrainingModel(nn.Module):
 			logits = outputs[0]
 			logits = pretrain_utils.gather_positions(
 				logits, inputs.masked_lm_positions)
-		maskshape = inputs.masked_lm_ids.size()
-		oh_labels = torch.zeros(list(maskshape) + [self.disc_config.vocab_size], device=torch.cuda.current_device())
-		oh_labels.scatter_(2, inputs.masked_lm_ids.view(maskshape[0],maskshape[1],1), 1)
-		# oh_labels = F.one_hot(inputs.masked_lm_ids, num_classes=self.disc_config.vocab_size).type(torch.float32)
+		# maskshape = inputs.masked_lm_ids.size()
+		# oh_labels = torch.zeros(list(maskshape) + [self.disc_config.vocab_size], device=torch.cuda.current_device())
+		# oh_labels.scatter_(2, inputs.masked_lm_ids.view(maskshape[0],maskshape[1],1), 1)
+		oh_labels = F.one_hot(inputs.masked_lm_ids, num_classes=self.disc_config.vocab_size).type(torch.float32)
 
 		probs = F.softmax(logits, dim=-1)
 		log_probs = F.log_softmax(logits, dim=-1)
