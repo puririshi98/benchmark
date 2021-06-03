@@ -289,9 +289,7 @@ class PretrainingModel(nn.Module):
 			logits = pretrain_utils.gather_positions(
 				logits, inputs.masked_lm_positions)
 
-		oh_labels = F.one_hot(
-			inputs.masked_lm_ids, num_classes=self.disc_config.vocab_size).type(torch.float32)
-
+		oh_labels = F.one_hot(inputs.masked_lm_ids, num_classes=self.disc_config.vocab_size)
 		probs = F.softmax(logits, dim=-1)
 		log_probs = F.log_softmax(logits, dim=-1)
 		label_log_probs = -torch.sum(log_probs * oh_labels, dim=-1)
