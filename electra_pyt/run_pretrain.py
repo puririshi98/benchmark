@@ -760,8 +760,6 @@ def main():
 	model.train()
 	local_step = 0
 	warming_up=True
-	warm_ct = 0
-	capturing=False
 	replaying=False
 	# torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
@@ -778,25 +776,18 @@ def main():
 				iter_start = time.time()
 				if args.graphs:
 					if warming_up:
-						if warm_ct == 0:
-							s = torch.cuda.Stream()
-							torch.cuda.synchronize()
-							s1 = torch.cuda.stream(s)
-						warm_ct +=1
-						with s1:
-							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
-						if warm_ct>=5:
-							warming_up = False
-							capturing=True
-					elif capturing:
-						with s1:
+						s = torch.cuda.Stream()
+						torch.cuda.synchronize()
+						with torch.cuda.stream(s):
+							for _ in range(5):
+								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
 							torch.cuda.synchronize()
 							g.capture_begin()
 							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 							g.capture_end()
-						capturing=False
+						warming_up=False
 						replaying=True
 					else:
 						g.replay()
