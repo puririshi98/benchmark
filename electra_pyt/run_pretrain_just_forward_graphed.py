@@ -762,6 +762,8 @@ def main():
 	model.train()
 	local_step = 0
 	warming_up=True
+	loss=None
+	total_loss=None
 	replaying=False
 	# torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
@@ -784,6 +786,7 @@ def main():
 							clip_norm=1.0
 							for _ in range(5):
 								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+								loss=total_loss
 								local_step+=1
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
