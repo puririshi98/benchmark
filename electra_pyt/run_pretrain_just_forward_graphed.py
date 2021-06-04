@@ -398,7 +398,7 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 
-def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0, graph=False,capture=False,replay=False):
+def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0, graph=False,capture=False,replay=False, loss=None, total_loss=None):
 	if graph:
 		if capture:
 			torch.cuda.synchronize()
@@ -814,7 +814,7 @@ def main():
 						warming_up=False
 						replaying=True
 					else:
-						total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step, graph=g, replay=True)
+						total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step, graph=g, replay=True, loss=total_loss, total_loss=total_loss)
 						# # g.replay()
 						# torch.cuda.synchronize()
 				else:
