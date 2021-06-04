@@ -787,7 +787,7 @@ def main():
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
 							torch.cuda.synchronize()
-							graph.capture_begin()
+							g.capture_begin()
 							if config.amp:
 								with torch.cuda.amp.autocast():
 									total_loss, eval_fn_inputs = model(features)
@@ -802,7 +802,7 @@ def main():
 								if config.gradient_accumulation_steps > 1:
 									total_loss = total_loss / config.gradient_accumulation_steps
 							loss = total_loss
-							graph.capture_end()
+							g.capture_end()
 							if local_step % config.gradient_accumulation_steps == 0:
 								if config.amp:
 									scaler.scale(total_loss).backward()
@@ -834,7 +834,7 @@ def main():
 						warming_up=False
 						replaying=True
 					else:
-						graph.replay()
+						g.replay()
 						torch.cuda.synchronize()
 						if local_step % config.gradient_accumulation_steps == 0:
 							if config.amp:
