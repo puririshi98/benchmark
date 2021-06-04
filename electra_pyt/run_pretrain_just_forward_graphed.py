@@ -791,21 +791,25 @@ def main():
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
 							torch.cuda.synchronize()
+							total_loss,eval_fn_inputs,loss
 							g.capture_begin()
 							if config.amp:
 								with torch.cuda.amp.autocast():
-									total_loss, eval_fn_inputs = model(features)
+									x, eval_fn_inputs = model(features)
+									total_loss.copy_(x)
+									loss.copy_(x)
 									if config.n_gpu > 1:
 										total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 									if config.gradient_accumulation_steps > 1:
 										total_loss = total_loss / config.gradient_accumulation_steps
 							else:
-								total_loss, eval_fn_inputs = model(features)
+								x, eval_fn_inputs = model(features)
+								total_loss.copy_(x)
+								loss.copy_(x)
 								if config.n_gpu > 1:
 									total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 								if config.gradient_accumulation_steps > 1:
 									total_loss = total_loss / config.gradient_accumulation_steps
-							loss = total_loss
 							g.capture_end()
 							if local_step % config.gradient_accumulation_steps == 0:
 								if config.amp:
