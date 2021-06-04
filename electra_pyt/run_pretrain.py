@@ -398,21 +398,47 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 
-def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0):
-	if config.amp:
-		with torch.cuda.amp.autocast():
+def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0, graph=False,capture=False,replay=False):
+	if graph:
+		if capture:
+			torch.cuda.empty_cache()
+			g = torch.cuda._Graph()
+			torch.cuda.synchronize()
+			g.capture_begin()
+			if config.amp:
+				with torch.cuda.amp.autocast():
+					total_loss, eval_fn_inputs = model(features)
+					if config.n_gpu > 1:
+						total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+					if config.gradient_accumulation_steps > 1:
+						total_loss = total_loss / config.gradient_accumulation_steps
+			else:
+				total_loss, eval_fn_inputs = model(features)
+				if config.n_gpu > 1:
+					total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+				if config.gradient_accumulation_steps > 1:
+					total_loss = total_loss / config.gradient_accumulation_steps
+			loss = total_loss
+			g.capture_end()
+		else:
+			g.replay()
+			torch.cuda.synchronize()
+
+	else:
+		if config.amp:
+			with torch.cuda.amp.autocast():
+				total_loss, eval_fn_inputs = model(features)
+				if config.n_gpu > 1:
+					total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+				if config.gradient_accumulation_steps > 1:
+					total_loss = total_loss / config.gradient_accumulation_steps
+		else:
 			total_loss, eval_fn_inputs = model(features)
 			if config.n_gpu > 1:
 				total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 			if config.gradient_accumulation_steps > 1:
 				total_loss = total_loss / config.gradient_accumulation_steps
-	else:
-		total_loss, eval_fn_inputs = model(features)
-		if config.n_gpu > 1:
-			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-		if config.gradient_accumulation_steps > 1:
-			total_loss = total_loss / config.gradient_accumulation_steps
-	loss = total_loss
+		loss = total_loss
 
 	if local_step % config.gradient_accumulation_steps == 0:
 		if config.amp:
@@ -781,20 +807,17 @@ def main():
 						torch.cuda.synchronize()
 						with torch.cuda.stream(s):
 							for _ in range(5):
-								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step,graph=False)
 								local_step+=1
-							torch.cuda.empty_cache()
-							g = torch.cuda._Graph()
-							torch.cuda.synchronize()
-							g.capture_begin()
-							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
-							g.capture_end()
+							
+							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step, graph=g, capture=True)
 							local_step+=1
 						warming_up=False
 						replaying=True
 					else:
-						g.replay()
-						torch.cuda.synchronize()
+						total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step, graph=g, replay=True)
+						# # g.replay()
+						# torch.cuda.synchronize()
 				else:
 					total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 				metrics["train_perf"].update(
