@@ -781,6 +781,7 @@ def main():
 						s = torch.cuda.Stream()
 						torch.cuda.synchronize()
 						with torch.cuda.stream(s):
+							clip_norm=1.0
 							for _ in range(5):
 								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 								local_step+=1
