@@ -838,7 +838,7 @@ def main():
 						warming_up=False
 						replaying=True
 					else:
-						g.replay()
+						total_loss,eval_fn_inputs,loss=g.replay()
 						torch.cuda.synchronize()
 						if local_step % config.gradient_accumulation_steps == 0:
 							if config.amp:
