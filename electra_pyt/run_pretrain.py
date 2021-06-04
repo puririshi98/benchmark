@@ -401,10 +401,8 @@ def set_seed(args):
 def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0, graph=False,capture=False,replay=False):
 	if graph:
 		if capture:
-			torch.cuda.empty_cache()
-			g = torch.cuda._Graph()
 			torch.cuda.synchronize()
-			g.capture_begin()
+			graph.capture_begin()
 			if config.amp:
 				with torch.cuda.amp.autocast():
 					total_loss, eval_fn_inputs = model(features)
@@ -419,9 +417,9 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, cl
 				if config.gradient_accumulation_steps > 1:
 					total_loss = total_loss / config.gradient_accumulation_steps
 			loss = total_loss
-			g.capture_end()
+			graph.capture_end()
 		else:
-			g.replay()
+			graph.replay()
 			torch.cuda.synchronize()
 
 	else:
@@ -809,7 +807,8 @@ def main():
 							for _ in range(5):
 								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step,graph=False)
 								local_step+=1
-							
+							torch.cuda.empty_cache()
+							g = torch.cuda._Graph()
 							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step, graph=g, capture=True)
 							local_step+=1
 						warming_up=False
