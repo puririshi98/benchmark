@@ -97,7 +97,7 @@ class DatasetIterator:
 
 
 
-def create_dataset(input_file, max_seq_length, batch_size, worker_init, num_cpu_threads=8):
+def create_dataset(input_file, max_seq_length, batch_size, worker_init, num_cpu_threads=4):
     dataset = PretrainDataset(
         input_file=input_file, max_pred_length=max_seq_length)
     sampler = RandomSampler(dataset)
