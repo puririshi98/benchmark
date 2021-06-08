@@ -14,6 +14,8 @@ ONNX_MODEL = "res18.onnx"
 with trt.Builder(TRT_LOGGER) as builder, builder.create_builder_config() as config, builder.create_network() as network, trt.OnnxParser(network, TRT_LOGGER) as parser:
 	# Configure the builder here.
 	config.max_workspace_size = 2**30
+	builder.max_workspace_size = 1 << 20
+    builder.max_batch_size = 1
 	# Parse the model to create a network.
 	with open(ONNX_MODEL, 'rb') as model:
 		parser.parse(model.read())
