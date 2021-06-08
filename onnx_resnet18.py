@@ -91,20 +91,22 @@ if __name__ == "__main__":
 	print("using fp16 mode:")
 	print("avg cost time: ", round(1000*time_sum/(i+1),4),'ms')
 	time_sum=0
+	model1=model.eval()
 	for i in range(5):
 		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda()
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
-		out=model(inputs)
+		out=model1(inputs)
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
 	print("using fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
+	halfmodel=model.half().eval()
 	for i in range(5):
 		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
-		halfmodel=model.half()
+		
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
 		out=halfmodel(inputs)
@@ -114,5 +116,34 @@ if __name__ == "__main__":
 	print("using fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 
-
+# self.model.eval()
+# 			torch.backends.cudnn.benchmark = bench
+# 			with torch.no_grad():
+# 				if precision == 'fp16':
+# 					self.model = self.model.half()
+# 				if graphs:
+# 					s = torch.cuda.Stream()
+# 					torch.cuda.synchronize()
+# 					with torch.cuda.stream(s):
+# 						nvtx.range_push('warming up')
+# 						print('warming up')
+# 						for _ in range(5):
+# 							self._step_eval(precision)
+# 						nvtx.range_pop()
+# 						torch.cuda.empty_cache()
+# 						g = torch.cuda._Graph()
+# 						torch.cuda.synchronize()
+# 						nvtx.range_push('capturing graph')
+# 						print('capturing graph')
+# 						g.capture_begin()
+# 						self._step_eval(precision)
+# 						g.capture_end()
+# 						nvtx.range_pop()
+# 						torch.cuda.synchronize()
+# 					nvtx.range_push('replaying')
+# 					print('replaying')
+# 					for _ in range(100):
+# 						g.replay()
+# 						torch.cuda.synchronize()
+# 					nvtx.range_pop()
 				
