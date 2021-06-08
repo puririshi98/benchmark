@@ -66,6 +66,7 @@ if __name__ == "__main__":
 	print("Engine Created :", type(engine))
 	context = engine.create_execution_context()
 	print("Context executed ", type(context))
+	time_sum=0
 	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
