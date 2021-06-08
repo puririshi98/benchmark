@@ -47,7 +47,13 @@ logger = logging.getLogger(__name__)
 
 torch._C._jit_set_profiling_executor(False)
 torch._C._jit_set_profiling_mode(False)
-
+torch._C._jit_set_nvfuser_enabled(True)
+torch._C._jit_set_texpr_fuser_enabled(False)
+torch._C._jit_set_profiling_executor(True)
+torch._C._jit_set_profiling_mode(True)
+torch._C._jit_override_can_fuse_on_cpu(False)
+torch._C._jit_override_can_fuse_on_gpu(False)
+torch._C._jit_set_bailout_depth(20)
 scaler = torch.cuda.amp.GradScaler()
 
 def setup_logger(args):
