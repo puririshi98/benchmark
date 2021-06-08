@@ -4,7 +4,7 @@ import torchvision.models as models
 import time
 import tensorrt as trt
 
-dummy_input = torch.randn(1, 3, 224, 224, device='cuda')
+dummy_input = torch.randn(1, 3, 224, 224).cuda()
 model = models.resnet18().cuda()
 torch.onnx.export(model, dummy_input, "res18.onnx", verbose=True)
 
