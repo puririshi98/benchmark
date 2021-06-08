@@ -41,9 +41,9 @@ def inference(engine, context, inputs, h_input, h_output, d_input, d_output, str
 	return out_cpu'''
 
 
-def alloc_buf(engine):
-	h_input = cuda.pagelocked_empty(trt.volume(engine.get_binding_shape(0)), dtype=np.float32)
-	h_output = cuda.pagelocked_empty(trt.volume(engine.get_binding_shape(1)), dtype=np.float32)
+def alloc_buf(engine,dtype):
+	h_input = cuda.pagelocked_empty(trt.volume(engine.get_binding_shape(0)), dtype=dtype)
+	h_output = cuda.pagelocked_empty(trt.volume(engine.get_binding_shape(1)), dtype=dtype)
 	# Allocate device memory for inputs and outputs.
 	d_input = cuda.mem_alloc(h_input.nbytes)
 	d_output = cuda.mem_alloc(h_output.nbytes)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine)
+		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		# print(type(res))
 		
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine)
+		h_input, h_output, d_input, d_output, stream = alloc_buf(engine,np.float16)
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		# print(type(res))
 		
