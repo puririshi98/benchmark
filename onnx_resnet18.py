@@ -24,7 +24,7 @@ def build_engine(model_path):
         # config.max_batch_size = 1
         with open(model_path, "rb") as f:
             parser.parse(f.read())
-        engine = builder.build_engine(network)
+        engine = builder.build_engine(network, config)
     return engine
 # def inference(engine, context, inputs, out_cpu, in_gpu, out_gpu, stream):
 # async version
