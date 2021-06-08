@@ -90,6 +90,29 @@ if __name__ == "__main__":
 		time_sum+=time.time()-t1
 	print("using fp16 mode:")
 	print("avg cost time: ", round(1000*time_sum/(i+1),4),'ms')
+	time_sum=0
+	for i in range(5):
+		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda()
+		t1 = time.time()
+		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
+		out=model(inputs)
+		# print(type(res))
+		
+		time_sum+=time.time()-t1
+	print("using fp32 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
+	time_sum=0
+	for i in range(5):
+		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+		halfmodel=model.half()
+		t1 = time.time()
+		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
+		out=halfmodel(inputs)
+		# print(type(res))
+		
+		time_sum+=time.time()-t1
+	print("using fp16 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 
 
 				
