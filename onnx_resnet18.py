@@ -77,7 +77,7 @@ if __name__ == "__main__":
 		
 		time_sum+=time.time()-t1
 	print("using fp32 mode:")
-	print("avg cost time: ", round(1000*time_sum/(i+1),4))
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
 	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 		
 		time_sum+=time.time()-t1
 	print("using fp16 mode:")
-	print("avg cost time: ", round(1000*time_sum/(i+1),4))
+	print("avg cost time: ", round(1000*time_sum/(i+1),4),'ms')
 
 
 				
