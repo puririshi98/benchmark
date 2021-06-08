@@ -21,7 +21,7 @@ EXPLICIT_BATCH = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
 def build_engine(model_path):
     with trt.Builder(TRT_LOGGER) as builder,builder.create_network(EXPLICIT_BATCH) as network,trt.OnnxParser(network, TRT_LOGGER) as parser, builder.create_builder_config() as config:
         config.max_workspace_size = 1<<30
-        config.max_batch_size = 1
+        # config.max_batch_size = 1
         with open(model_path, "rb") as f:
             parser.parse(f.read())
         engine = builder.build_cuda_engine(network)
