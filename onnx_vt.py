@@ -55,7 +55,7 @@ import timm.models.vision_transformer
 import timm
 if __name__ == "__main__":
 	dummy_input = torch.randn(1, 3, 224, 224).cuda()
-	model = timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True)
+	model = timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda()
 
 	torch.onnx.export(model, dummy_input, "vt.onnx", verbose=False)
 
