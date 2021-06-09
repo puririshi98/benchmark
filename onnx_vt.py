@@ -95,7 +95,7 @@ if __name__ == "__main__":
 	time_sum=0
 	model1=model.float().eval()
 	for i in range(5):
-		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda()
+		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().float()
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
 		out=model1(inputs)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 	time_sum=0
 	halfmodel=model.half().eval()
 	for i in range(5):
-		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().half()
 		
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 	model1=model.float().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
-	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda().float()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().float()
 	with torch.cuda.stream(s):
 		for _ in range(5):
 			out=model1(inputs)
@@ -147,7 +147,7 @@ if __name__ == "__main__":
 	model2=model.half().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
-	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().half()
 	with torch.cuda.stream(s):
 		for _ in range(5):
 			out=model2(inputs)
@@ -179,7 +179,7 @@ if __name__ == "__main__":
 	model1=torch.jit.script(models.resnet18().cuda()).float().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
-	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda().float()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().float()
 	with torch.cuda.stream(s):
 		for _ in range(5):
 			out=model1(inputs)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
 	model2=torch.jit.script(models.resnet18().cuda()).half().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
-	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().half()
 	with torch.cuda.stream(s):
 		for _ in range(5):
 			out=model2(inputs)
