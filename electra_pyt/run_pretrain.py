@@ -770,7 +770,6 @@ def main():
 	replaying=False
 	torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
-	first=True
 	while step <= config.num_train_steps:
 		for dataloader in dataset_iterator:
 			if step > config.num_train_steps:
@@ -778,12 +777,11 @@ def main():
 				sys.exit()
 			first=True
 			fetcher = data_prefetcher(dataloader)
+			iter_start = time.time()
 			features = fetcher.next()
 			while features is not None:
 				local_step += 1
-				if first:
-					iter_start = time.time()
-					first=False
+				
 				if args.graphs:
 					if warming_up:
 						s = torch.cuda.Stream()
@@ -866,8 +864,7 @@ def main():
 				if step > config.num_train_steps:
 					torch.cuda.cudart().cudaProfilerStop()
 					sys.exit()
-				if not first:
-					iter_start = time.time()
+				iter_start = time.time()
 				features = fetcher.next()
 
 

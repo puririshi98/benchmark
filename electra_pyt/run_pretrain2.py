@@ -726,6 +726,7 @@ def main():
 		for dataloader in dataset_iterator:
 			if step > config.num_train_steps:
 				break
+			iter_start = time.time()
 			for batch in dataloader:
 				batch = tuple(t.to(device) for t in batch)
 				features = {
@@ -735,7 +736,7 @@ def main():
 				}
 
 				local_step += 1
-				iter_start = time.time()
+				
 
 				total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
 
@@ -797,6 +798,7 @@ def main():
 					step = opt_step
 				if step > config.num_train_steps:
 					break
+				iter_start = time.time()
 
 	train_summary_writer.flush()
 	train_summary_writer.close()
