@@ -118,57 +118,50 @@ if __name__ == "__main__":
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
 	model1=model.eval()
-	for i in range(5):
-		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda()
-		t1 = time.time()
-		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
+	s = torch.cuda.Stream()
+	torch.cuda.synchronize()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda()
+	with torch.cuda.stream(s):
+		for _ in range(5):
+			out=model1(inputs)
+		torch.cuda.empty_cache()
+		g = torch.cuda._Graph()
+		torch.cuda.synchronize()
+		g.capture_begin()
 		out=model1(inputs)
-		# print(type(res))
+		g.capture_end()
+		torch.cuda.synchronize()
+
+	for _ in range(5):
+		t1=time.time()
+		g.replay()
+		torch.cuda.synchronize()
 		
 		time_sum+=time.time()-t1
 	print("using cudagraphsfp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
-	halfmodel=model.half().eval()
-	for i in range(5):
-		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
-		
-		t1 = time.time()
-		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
-		out=halfmodel(inputs)
-		# print(type(res))
+	torch.backends.cudnn.benchmark = True
+	model2=model.half.().eval()
+	s = torch.cuda.Stream()
+	torch.cuda.synchronize()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+	with torch.cuda.stream(s):
+		for _ in range(5):
+			out=model2(inputs)
+		torch.cuda.empty_cache()
+		g = torch.cuda._Graph()
+		torch.cuda.synchronize()
+		g.capture_begin()
+		out=model2(inputs)
+		g.capture_end()
+		torch.cuda.synchronize()
+
+	for _ in range(5):
+		t1=time.time()
+		g.replay()
+		torch.cuda.synchronize()
 		
 		time_sum+=time.time()-t1
 	print("using cudagraphsfp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
-# self.model.eval()
-# 			torch.backends.cudnn.benchmark = bench
-# 			with torch.no_grad():
-# 				if precision == 'fp16':
-# 					self.model = self.model.half()
-# 				if graphs:
-# 					s = torch.cuda.Stream()
-# 					torch.cuda.synchronize()
-# 					with torch.cuda.stream(s):
-# 						nvtx.range_push('warming up')
-# 						print('warming up')
-# 						for _ in range(5):
-# 							self._step_eval(precision)
-# 						nvtx.range_pop()
-# 						torch.cuda.empty_cache()
-# 						g = torch.cuda._Graph()
-# 						torch.cuda.synchronize()
-# 						nvtx.range_push('capturing graph')
-# 						print('capturing graph')
-# 						g.capture_begin()
-# 						self._step_eval(precision)
-# 						g.capture_end()
-# 						nvtx.range_pop()
-# 						torch.cuda.synchronize()
-# 					nvtx.range_push('replaying')
-# 					print('replaying')
-# 					for _ in range(100):
-# 						g.replay()
-# 						torch.cuda.synchronize()
-# 					nvtx.range_pop()
-				
