@@ -165,3 +165,60 @@ if __name__ == "__main__":
 		time_sum+=time.time()-t1
 	print("using cudagraphsfp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
+	torch._C._jit_set_nvfuser_enabled(True)
+	torch._C._jit_set_texpr_fuser_enabled(False)
+	torch._C._jit_set_profiling_executor(True)
+	torch._C._jit_set_profiling_mode(True)
+	torch._C._jit_override_can_fuse_on_cpu(False)
+	torch._C._jit_override_can_fuse_on_gpu(False)
+	torch._C._jit_set_bailout_depth(20)
+	time_sum=0
+	torch.backends.cudnn.benchmark = True
+	model1=model.float().eval()
+	s = torch.cuda.Stream()
+	torch.cuda.synchronize()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda().float()
+	with torch.cuda.stream(s):
+		for _ in range(5):
+			out=model1(inputs)
+		torch.cuda.empty_cache()
+		g = torch.cuda._Graph()
+		torch.cuda.synchronize()
+		g.capture_begin()
+		out=model1(inputs)
+		g.capture_end()
+		torch.cuda.synchronize()
+
+	for _ in range(5):
+		t1=time.time()
+		g.replay()
+		torch.cuda.synchronize()
+		
+		time_sum+=time.time()-t1
+	print("using nvfusedcudagraphsfp32 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
+	time_sum=0
+	torch.backends.cudnn.benchmark = True
+	model2=model.half().eval()
+	s = torch.cuda.Stream()
+	torch.cuda.synchronize()
+	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+	with torch.cuda.stream(s):
+		for _ in range(5):
+			out=model2(inputs)
+		torch.cuda.empty_cache()
+		g = torch.cuda._Graph()
+		torch.cuda.synchronize()
+		g.capture_begin()
+		out=model2(inputs)
+		g.capture_end()
+		torch.cuda.synchronize()
+
+	for _ in range(5):
+		t1=time.time()
+		g.replay()
+		torch.cuda.synchronize()
+		
+		time_sum+=time.time()-t1
+	print("using nvfusedcudagraphsfp16 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
