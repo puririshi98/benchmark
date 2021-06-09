@@ -433,7 +433,7 @@ def main(e2e_start_time):
 
 		metrics["train_perf"].update_state(
 			config.train_batch_size * get_world_size() / (time.time() - iter_start))
-		if int(config.train_batch_size * get_world_size() / (time.time() - iter_start))>2000:
+		if int(config.train_batch_size * get_world_size() / (time.time() - iter_start))>1000:
 			lib.cudaProfilerStart()
 		metrics["total_loss"].update_state(values=total_loss)
 		metric_fn(config, metrics, eval_fn_inputs)
