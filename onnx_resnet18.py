@@ -142,7 +142,7 @@ if __name__ == "__main__":
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	model2=model.half.().eval()
+	model2=model.half().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
