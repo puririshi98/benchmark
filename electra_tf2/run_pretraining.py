@@ -417,7 +417,7 @@ def main(e2e_start_time):
 	local_step = 0
 	saved_ckpt = False
 	lib = ctypes.cdll.LoadLibrary('libcudart.so')
-	lib.cudaProfilerStart()
+	
 	
 	while int(checkpoint.step) <= config.num_train_steps:
 		iter_start = time.time()
@@ -433,6 +433,8 @@ def main(e2e_start_time):
 
 		metrics["train_perf"].update_state(
 			config.train_batch_size * get_world_size() / (time.time() - iter_start))
+		if metrics["train_perf"]>2000:
+			lib.cudaProfilerStart()
 		metrics["total_loss"].update_state(values=total_loss)
 		metric_fn(config, metrics, eval_fn_inputs)
 

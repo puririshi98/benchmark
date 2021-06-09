@@ -76,7 +76,7 @@ if __name__ == "__main__":
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
-	print("using fp32 mode:")
+	print("using onnxTRT fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
 	for i in range(5):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
-	print("using fp16 mode:")
+	print("using onnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000*time_sum/(i+1),4),'ms')
 	time_sum=0
 	model1=model.eval()
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
-	print("using fp32 mode:")
+	print("using torch fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
 	halfmodel=model.half().eval()
@@ -113,9 +113,34 @@ if __name__ == "__main__":
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
-	print("using fp16 mode:")
+	print("using torch fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
-
+	time_sum=0
+	torch.backends.cudnn.benchmark = True
+	model1=model.eval()
+	for i in range(5):
+		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda()
+		t1 = time.time()
+		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
+		out=model1(inputs)
+		# print(type(res))
+		
+		time_sum+=time.time()-t1
+	print("using cudagraphsfp32 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
+	time_sum=0
+	halfmodel=model.half().eval()
+	for i in range(5):
+		inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
+		
+		t1 = time.time()
+		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
+		out=halfmodel(inputs)
+		# print(type(res))
+		
+		time_sum+=time.time()-t1
+	print("using cudagraphsfp16 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 # self.model.eval()
 # 			torch.backends.cudnn.benchmark = bench
 # 			with torch.no_grad():
