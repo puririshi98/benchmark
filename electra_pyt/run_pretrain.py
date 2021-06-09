@@ -675,7 +675,7 @@ def main():
 
 	# Set up model
 	model = PretrainingModel(config)
-	model.to(device)
+	model = torch.jit.script(model.to(device))
 
 	# Set up optimizer and scheduler
 	no_decay = ["bias", "LayerNorm.weight"]
