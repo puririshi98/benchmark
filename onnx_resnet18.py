@@ -174,7 +174,7 @@ if __name__ == "__main__":
 	torch._C._jit_set_bailout_depth(20)
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	model1=torch.jit.script(model).float().eval()
+	model1=torch.jit.script(models.resnet18().cuda()).float().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float32)).cuda().float()
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	model2=torch.jit.script(model).half().eval()
+	model2=torch.jit.script(models.resnet18().cuda()).half().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size)).astype(np.float16)).cuda().half()
