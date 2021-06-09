@@ -416,7 +416,7 @@ def main(e2e_start_time):
 	train_start, start_step = time.time(), int(checkpoint.step) - 1
 	local_step = 0
 	saved_ckpt = False
-	lib = cdll.LoadLibrary('libcudart.so')
+	lib = ctypes.cdll.LoadLibrary('libcudart.so')
 	lib.cudaProfilerStart()
 	
 	while int(checkpoint.step) <= config.num_train_steps:
