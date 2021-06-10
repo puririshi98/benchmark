@@ -406,7 +406,7 @@ def set_seed(args):
 
 def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0):
 	if config.amp:
-		with torch.cuda.amp.autocast():
+		with torch.cuda.amp.autocast(enabled=use_amp):
 			total_loss, eval_fn_inputs = model(features)
 			if config.n_gpu > 1:
 				total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
