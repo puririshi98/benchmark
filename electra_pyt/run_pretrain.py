@@ -408,14 +408,15 @@ def fwd_bwd(features, model):
 		total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 	if config.gradient_accumulation_steps > 1:
 		total_loss = total_loss / config.gradient_accumulation_steps
+	scaler.scale(total_loss).backward()
 	return total_loss, eval_fn_inputs
 
 
 def train_one_step(config, model, optimizer, scheduler, features, local_step, scaler, clip_norm=1.0):
-	with torch.cuda.amp.autocast(enabled=use_amp):
-		total_loss, eval_fn_inputs = fwd_bwd(features, model)
+	with torch.cuda.amp.autocast(enabled=use_amp):	
 		if local_step % config.gradient_accumulation_steps == 0:
-			scaler.scale(total_loss).backward()
+			total_loss, eval_fn_inputs = fwd_bwd(features, scaler, model)
+			
 			if config.optimizer.lower() == "adam":
 				# Unscales the gradients of optimizer's assigned params in-place
 				scaler.unscale_(optimizer)
@@ -423,6 +424,7 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, sc
 				torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
 			scheduler.step()  # Update learning rate schedule
 			scaler.step(optimizer)
+			optimizer.zero_grad(set_to_none=True)
 			scaler.update()
 		
 
@@ -430,7 +432,8 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, sc
 			for param in model.parameters():
 				param.grad = None
 		else:
-			scaler.scale(total_loss).backward()				
+			with model.no_sync():
+				total_loss, eval_fn_inputs = fwd_bwd(features, model)
 				
 
 	return loss, eval_fn_inputs
