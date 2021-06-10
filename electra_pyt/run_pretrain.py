@@ -453,10 +453,7 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, cl
 			param.grad = None
 	elif not config.amp:
 		with model.no_sync():
-			if config.amp:
-				scaler.scale(total_loss).backward()
-			else:
-				total_loss.backward()
+			total_loss.backward()
 
 	return loss, eval_fn_inputs
 
