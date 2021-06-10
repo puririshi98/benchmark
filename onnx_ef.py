@@ -258,6 +258,11 @@ if __name__ == "__main__":
 		torch.cuda.synchronize()
 		
 		time_sum+=time.time()-t1
+		if i==0:
+			previous_out = d_output
+		else:
+			if previous_out == d_output:
+				print("inputs are changing but outputs are not")
 	print("using torchcudagraphsonnxTRT fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	#fp16 cudagraphsonnxTRT
@@ -282,12 +287,17 @@ if __name__ == "__main__":
 		g.capture_end()
 		torch.cuda.synchronize()
 
-	for _ in range(5):
+	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		t1=time.time()
 		g.replay()
 		torch.cuda.synchronize()
 		
 		time_sum+=time.time()-t1
+		if i==0:
+			previous_out = d_output
+		else:
+			if previous_out == d_output:
+				print("inputs are changing but outputs are not")
 	print("using torchcudagraphsonnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
