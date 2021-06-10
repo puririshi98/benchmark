@@ -425,7 +425,8 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, sc
 			torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
 		scheduler.step()  # Update learning rate schedule
 		scaler.step(optimizer)
-		optimizer.zero_grad(set_to_none=True)
+		# optimizer.zero_grad(set_to_none=True)
+		optimizer.zero_grad()
 		scaler.update()
 	else:
 		with model.no_sync():
