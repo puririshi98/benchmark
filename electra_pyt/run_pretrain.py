@@ -405,20 +405,30 @@ def set_seed(args):
 
 
 def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0):
-	if config.amp:
-		with torch.cuda.amp.autocast(enabled=use_amp):
+	if local_step % config.gradient_accumulation_steps == 0 or not config.amp:
+		if config.amp:
+			with torch.cuda.amp.autocast(enabled=use_amp):
+				total_loss, eval_fn_inputs = model(features)
+				if config.n_gpu > 1:
+					total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+				if config.gradient_accumulation_steps > 1:
+					total_loss = total_loss / config.gradient_accumulation_steps
+		else:
 			total_loss, eval_fn_inputs = model(features)
 			if config.n_gpu > 1:
 				total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 			if config.gradient_accumulation_steps > 1:
 				total_loss = total_loss / config.gradient_accumulation_steps
-	else:
-		total_loss, eval_fn_inputs = model(features)
-		if config.n_gpu > 1:
-			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-		if config.gradient_accumulation_steps > 1:
-			total_loss = total_loss / config.gradient_accumulation_steps
-	loss = total_loss
+		loss = total_loss
+	elif local_step % config.gradient_accumulation_steps != 0 and config.amp:
+		with model.no_sync():
+			with torch.cuda.amp.autocast(enabled=use_amp):
+				total_loss, eval_fn_inputs = model(features)
+				if config.n_gpu > 1:
+					total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+				if config.gradient_accumulation_steps > 1:
+					total_loss = total_loss / config.gradient_accumulation_steps
+				scaler.scale(total_loss).backward()
 
 	if local_step % config.gradient_accumulation_steps == 0:
 		if config.amp:
@@ -441,7 +451,7 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, cl
 		# model.zero_grad()
 		for param in model.parameters():
 			param.grad = None
-	else:
+	elif not config.amp:
 		with model.no_sync():
 			if config.amp:
 				scaler.scale(total_loss).backward()
