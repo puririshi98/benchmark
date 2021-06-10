@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
 
 
-	fp16 cudagraphsonnxTRT
+	#fp16 cudagraphsonnxTRT
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
 	s = torch.cuda.Stream()
