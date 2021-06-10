@@ -238,12 +238,13 @@ if __name__ == "__main__":
 	allocd=False
 	with torch.cuda.stream(s):
 		for _ in range(5):
-			h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+			if not allocd:
+				h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+				allocd=True
 			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
 		torch.cuda.synchronize()
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		g.capture_begin()
 		# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
@@ -272,12 +273,13 @@ if __name__ == "__main__":
 	allocd=False
 	with torch.cuda.stream(s):
 		for _ in range(5):
-			h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
+			if not allocd:
+				h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
+				allocd=True
 			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
 		torch.cuda.synchronize()
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
 		g.capture_begin()
 		# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
