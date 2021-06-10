@@ -235,15 +235,18 @@ if __name__ == "__main__":
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
+	allocd=False
 	with torch.cuda.stream(s):
 		for _ in range(5):
-			h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+			if not allocd:
+				h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+				allocd=True
 			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
 		torch.cuda.synchronize()
 		g.capture_begin()
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+		# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		g.capture_end()
 		torch.cuda.synchronize()
@@ -262,15 +265,18 @@ if __name__ == "__main__":
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+	allocd=False
 	with torch.cuda.stream(s):
 		for _ in range(5):
-			h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
+			if not allocd:
+				h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
+				allocd=True
 			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
 		torch.cuda.synchronize()
 		g.capture_begin()
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+		# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		g.capture_end()
 		torch.cuda.synchronize()
