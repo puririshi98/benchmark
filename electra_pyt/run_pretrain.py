@@ -54,7 +54,6 @@ logger = logging.getLogger(__name__)
 # torch._C._jit_override_can_fuse_on_cpu(False)
 # torch._C._jit_override_can_fuse_on_gpu(False)
 # torch._C._jit_set_bailout_depth(20)
-scaler = torch.cuda.amp.GradScaler()
 
 def setup_logger(args):
 	os.makedirs(args.log_dir, exist_ok=True)
@@ -403,35 +402,19 @@ def set_seed(args):
 	if args.n_gpu > 0:
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
+def fwd_bwd(features, model):
+	total_loss, eval_fn_inputs = model(features)
+	if config.n_gpu > 1:
+		total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+	if config.gradient_accumulation_steps > 1:
+		total_loss = total_loss / config.gradient_accumulation_steps
+	return total_loss, eval_fn_inputs
 
-def train_one_step(config, model, optimizer, scheduler, features, local_step, clip_norm=1.0):
-	if local_step % config.gradient_accumulation_steps == 0 or not config.amp:
-		if config.amp:
-			with torch.cuda.amp.autocast(enabled=use_amp):
-				total_loss, eval_fn_inputs = model(features)
-				if config.n_gpu > 1:
-					total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-				if config.gradient_accumulation_steps > 1:
-					total_loss = total_loss / config.gradient_accumulation_steps
-		else:
-			total_loss, eval_fn_inputs = model(features)
-			if config.n_gpu > 1:
-				total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-			if config.gradient_accumulation_steps > 1:
-				total_loss = total_loss / config.gradient_accumulation_steps
-		loss = total_loss
-	elif local_step % config.gradient_accumulation_steps != 0 and config.amp:
-		with model.no_sync():
-			with torch.cuda.amp.autocast(enabled=use_amp):
-				total_loss, eval_fn_inputs = model(features)
-				if config.n_gpu > 1:
-					total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-				if config.gradient_accumulation_steps > 1:
-					total_loss = total_loss / config.gradient_accumulation_steps
-				scaler.scale(total_loss).backward()
 
-	if local_step % config.gradient_accumulation_steps == 0:
-		if config.amp:
+def train_one_step(config, model, optimizer, scheduler, features, local_step, scaler, clip_norm=1.0):
+	with torch.cuda.amp.autocast(enabled=use_amp):
+		total_loss, eval_fn_inputs = fwd_bwd(features, model)
+		if local_step % config.gradient_accumulation_steps == 0:
 			scaler.scale(total_loss).backward()
 			if config.optimizer.lower() == "adam":
 				# Unscales the gradients of optimizer's assigned params in-place
@@ -441,19 +424,14 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, cl
 			scheduler.step()  # Update learning rate schedule
 			scaler.step(optimizer)
 			scaler.update()
-		else:
-			total_loss.backward()
-			if config.optimizer.lower() == "adam":
-				torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
-			scheduler.step()  # Update learning rate schedule
-			optimizer.step()
+		
 
-		# model.zero_grad()
-		for param in model.parameters():
-			param.grad = None
-	elif not config.amp:
-		with model.no_sync():
-			total_loss.backward()
+			# model.zero_grad()
+			for param in model.parameters():
+				param.grad = None
+		else:
+			scaler.scale(total_loss).backward()				
+				
 
 	return loss, eval_fn_inputs
 
@@ -713,6 +691,8 @@ def main():
 	# optimizer = AdamW(optimizer_grouped_parameters, lr=config.learning_rate)
 	# if config.amp:
 	#     model, optimizer = amp.initialize(model, optimizer, opt_level=config.amp_opt_level)
+	scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
+
 	scheduler = get_poly_schedule_with_warmup(
 		optimizer,
 		num_warmup_steps=config.num_warmup_steps,
@@ -795,13 +775,13 @@ def main():
 						torch.cuda.synchronize()
 						with torch.cuda.stream(s):
 							for _ in range(5):
-								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+								total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step,scaler)
 								local_step+=1
 							torch.cuda.empty_cache()
 							g = torch.cuda._Graph()
 							torch.cuda.synchronize()
 							g.capture_begin()
-							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+							total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step,scaler)
 							g.capture_end()
 							local_step+=1
 						warming_up=False
@@ -810,7 +790,7 @@ def main():
 						g.replay()
 						torch.cuda.synchronize()
 				else:
-					total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step)
+					total_loss, eval_fn_inputs = train_one_step(config, model, optimizer, scheduler, features, local_step, scaler)
 				metrics["train_perf"].update(
 					config.train_batch_size * get_world_size() / (time.time() - iter_start))
 				metrics["total_loss"].update(values=total_loss)
