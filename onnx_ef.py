@@ -263,7 +263,7 @@ if __name__ == "__main__":
 		
 		time_sum+=time.time()-t1
 		if i!=0:
-			if previous_out == h_output:
+			if (previous_out == h_output).all():
 				print("inputs are changing but outputs are not")
 		previous_out=h_output.copy()
 	print("using torchcudagraphsonnxTRT fp16 mode:")
