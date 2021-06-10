@@ -55,7 +55,7 @@ import timm.models.vision_transformer
 import timm
 if __name__ == "__main__":
 	dummy_input = torch.randn(1, 3, 224, 224).cuda()
-	model = timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda()
+	model = timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda().float()
 
 	torch.onnx.export(model, dummy_input, "vt.onnx", verbose=False)
 
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 	torch._C._jit_set_bailout_depth(20)
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	model1=torch.jit.script(models.resnet18().cuda()).float().eval()
+	model1=torch.jit.script(timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda()).float().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().float()
@@ -201,7 +201,7 @@ if __name__ == "__main__":
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	model2=torch.jit.script(models.resnet18().cuda()).half().eval()
+	model2=torch.jit.script(timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda()).half().eval()
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	inputs = torch.tensor(np.random.random((1, 3, input_size, input_size))).cuda().half()
