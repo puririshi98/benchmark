@@ -251,7 +251,7 @@ if __name__ == "__main__":
 		g.capture_end()
 		torch.cuda.synchronize()
 
-	for _ in range(5):
+	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		t1=time.time()
 		g.replay()
