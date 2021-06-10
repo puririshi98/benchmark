@@ -413,7 +413,7 @@ def fwd_bwd(features, scaler, model, config):
 
 
 def train_one_step(config, model, optimizer, scheduler, features, local_step, scaler, clip_norm=1.0):
-	with torch.cuda.amp.autocast(enabled=use_amp):	
+	with torch.cuda.amp.autocast(enabled=config.amp):	
 		if local_step % config.gradient_accumulation_steps == 0:
 			total_loss, eval_fn_inputs = fwd_bwd(features, scaler, model, config)
 			
