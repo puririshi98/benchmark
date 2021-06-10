@@ -230,40 +230,7 @@ if __name__ == "__main__":
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 
 
-	time_sum=0
-	torch.backends.cudnn.benchmark = True
-	s = torch.cuda.Stream()
-	torch.cuda.synchronize()
-	inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
-	allocd=False
-	with torch.cuda.stream(s):
-		for _ in range(5):
-			if not allocd:
-				h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
-				allocd=True
-			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
-		torch.cuda.empty_cache()
-		g = torch.cuda._Graph()
-		torch.cuda.synchronize()
-		g.capture_begin()
-		# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
-		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
-		g.capture_end()
-		torch.cuda.synchronize()
 
-	for i in range(5):
-		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-		t1=time.time()
-		g.replay()
-		torch.cuda.synchronize()
-		
-		time_sum+=time.time()-t1
-		if i!=0:
-			if previous_out == d_output:
-				print("inputs are changing but outputs are not")
-		previous_out=d_output
-	print("using torchcudagraphsonnxTRT fp32 mode:")
-	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	#fp16 cudagraphsonnxTRT
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
@@ -277,18 +244,20 @@ if __name__ == "__main__":
 				h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
 				allocd=True
 			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+		oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
 		torch.cuda.synchronize()
 		g.capture_begin()
 		# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
-		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+		res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		g.capture_end()
 		torch.cuda.synchronize()
 
 	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		t1=time.time()
+		oginputs[:]=inputs
 		g.replay()
 		torch.cuda.synchronize()
 		
@@ -296,6 +265,6 @@ if __name__ == "__main__":
 		if i!=0:
 			if previous_out == d_output:
 				print("inputs are changing but outputs are not")
-		previous_out=d_output
+		previous_out=d_output.clone()
 	print("using torchcudagraphsonnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
