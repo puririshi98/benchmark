@@ -263,8 +263,8 @@ if __name__ == "__main__":
 		
 		time_sum+=time.time()-t1
 		if i!=0:
-			if previous_out == d_output:
+			if previous_out == h_output:
 				print("inputs are changing but outputs are not")
-		previous_out=d_output.clone()
+		previous_out=h_output.clone()
 	print("using torchcudagraphsonnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
