@@ -257,7 +257,7 @@ if __name__ == "__main__":
 		torch.cuda.synchronize()
 		
 		time_sum+=time.time()-t1
-	print("using torchcudagraphsonnxTRT fp16 mode:")
+	print("using torchcudagraphsonnxTRT fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	#fp16 cudagraphsonnxTRT
 	time_sum=0
