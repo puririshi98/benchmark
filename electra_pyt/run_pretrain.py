@@ -409,7 +409,7 @@ def fwd_bwd(features, scaler, model, config):
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 		if config.gradient_accumulation_steps > 1:
 			total_loss = total_loss / config.gradient_accumulation_steps
-		scaler.scale(total_loss).backward()
+	scaler.scale(total_loss).backward()
 	return total_loss, eval_fn_inputs
 
 
