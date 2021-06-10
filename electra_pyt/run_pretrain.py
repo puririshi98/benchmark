@@ -431,7 +431,7 @@ def train_one_step(config, model, optimizer, scheduler, features, local_step, sc
 				total_loss, eval_fn_inputs = fwd_bwd(features, scaler, model, config)
 				
 
-	return loss, eval_fn_inputs
+	return total_loss, eval_fn_inputs
 
 
 def load_checkpoint(config, model, optimizer, scheduler, dataset_iterator):
