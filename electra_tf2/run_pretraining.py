@@ -417,8 +417,8 @@ def main(e2e_start_time):
 	local_step = 0
 	saved_ckpt = False
 	lib = ctypes.cdll.LoadLibrary('libcudart.so')
-	
-	
+	started=False
+	profd_iters=0
 	while int(checkpoint.step) <= config.num_train_steps:
 		iter_start = time.time()
 		saved_ckpt = False
@@ -433,8 +433,15 @@ def main(e2e_start_time):
 
 		metrics["train_perf"].update_state(
 			config.train_batch_size * get_world_size() / (time.time() - iter_start))
-		if int(config.train_batch_size * get_world_size() / (time.time() - iter_start))>1000:
-			lib.cudaProfilerStart()
+		if int(config.train_batch_size * get_world_size() / (time.time() - iter_start))>3000 or started:
+			if not started:
+				lib.cudaProfilerStart()
+				started=True
+			else:
+				profd_iters+=1
+			if profd_iters >=3:
+				lib.cudaProfilerStop()
+				sys.exit()
 		metrics["total_loss"].update_state(values=total_loss)
 		metric_fn(config, metrics, eval_fn_inputs)
 
@@ -490,7 +497,7 @@ def main(e2e_start_time):
 			log(" ** Saved model checkpoint for step {}: {}".format(step, save_path))
 		iter_save_path = iter_manager.save(checkpoint_number=step)
 		log(" ** Saved iterator checkpoint for step {}: {}".format(step, iter_save_path), all_rank=True)
-	lib.cudaProfilerStop()
+	
 	return args
 
 
