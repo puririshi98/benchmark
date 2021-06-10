@@ -403,32 +403,33 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 def fwd_bwd(features, scaler, model, config):
-	total_loss, eval_fn_inputs = model(features)
-	if config.n_gpu > 1:
-		total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-	if config.gradient_accumulation_steps > 1:
-		total_loss = total_loss / config.gradient_accumulation_steps
-	scaler.scale(total_loss).backward()
+	with torch.cuda.amp.autocast(enabled=config.amp):
+		total_loss, eval_fn_inputs = model(features)
+		if config.n_gpu > 1:
+			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+		if config.gradient_accumulation_steps > 1:
+			total_loss = total_loss / config.gradient_accumulation_steps
+		scaler.scale(total_loss).backward()
 	return total_loss, eval_fn_inputs
 
 
 def train_one_step(config, model, optimizer, scheduler, features, local_step, scaler, clip_norm=1.0):
-	with torch.cuda.amp.autocast(enabled=config.amp):	
-		if local_step % config.gradient_accumulation_steps == 0:
+	
+	if local_step % config.gradient_accumulation_steps == 0:
+		total_loss, eval_fn_inputs = fwd_bwd(features, scaler, model, config)
+		
+		if config.optimizer.lower() == "adam":
+			# Unscales the gradients of optimizer's assigned params in-place
+			scaler.unscale_(optimizer)
+			# Since the gradients of optimizer's assigned params are unscaled, clips as usual:
+			torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
+		scheduler.step()  # Update learning rate schedule
+		scaler.step(optimizer)
+		optimizer.zero_grad(set_to_none=True)
+		scaler.update()
+	else:
+		with model.no_sync():
 			total_loss, eval_fn_inputs = fwd_bwd(features, scaler, model, config)
-			
-			if config.optimizer.lower() == "adam":
-				# Unscales the gradients of optimizer's assigned params in-place
-				scaler.unscale_(optimizer)
-				# Since the gradients of optimizer's assigned params are unscaled, clips as usual:
-				torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
-			scheduler.step()  # Update learning rate schedule
-			scaler.step(optimizer)
-			optimizer.zero_grad(set_to_none=True)
-			scaler.update()
-		else:
-			with model.no_sync():
-				total_loss, eval_fn_inputs = fwd_bwd(features, scaler, model, config)
 				
 
 	return total_loss, eval_fn_inputs
