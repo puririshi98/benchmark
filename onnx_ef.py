@@ -101,7 +101,7 @@ if __name__ == "__main__":
 	# ogoutputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	nvtx.range_push('warmup and capture')
 
-	with torch.cuda.stream(stream):
+	with cuda.stream(stream):
 		for _ in range(5):
 			inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 			# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
