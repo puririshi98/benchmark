@@ -70,19 +70,23 @@ if __name__ == "__main__":
 	context = engine.create_execution_context()
 	print("Context executed ", type(context))
 
-	# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
-	# time_sum=0
-	# for i in range(5):
-	# 	inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
-	# 	t1 = time.time()
-	# 	# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
+	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+	time_sum=0
+	for i in range(5):
+		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
+		t1 = time.time()
+		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
 		
-	# 	res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
-	# 	# print(type(res))
+		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+		# print(type(res))
 		
-	# 	time_sum+=time.time()-t1
-	# print("using onnxTRT fp32 mode:")
-	# print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
+		time_sum+=time.time()-t1
+		if i!=0:
+			if (previous_out == h_output).all():
+				print("inputs are changing but outputs are not")
+		previous_out=h_output.copy()
+	print("using onnxTRT fp32 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	# time_sum=0
 	# h_input, h_output, d_input, d_output, stream = alloc_buf(engine,np.float16)
 	# for i in range(5):
