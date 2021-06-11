@@ -52,7 +52,7 @@ def alloc_buf(engine,dtype):
 	stream = cuda.Stream()
 
 	return h_input, h_output, d_input, d_output, stream
-
+import os
 import timm.models.efficientnet
 import timm
 if __name__ == "__main__":
