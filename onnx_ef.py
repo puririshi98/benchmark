@@ -118,7 +118,7 @@ if __name__ == "__main__":
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 		oginputs[:] = inputs
-		oginputs.copy_(inputs)
+		# oginputs.copy_(inputs)
 		g.capture_begin()
 		res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		# ogoutputs[:] = oginputs * 2
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 		nvtx.range_push("Singular Replay")
 		t1=time.time()
 		oginputs[:]=inputs
-		oginputs.copy_(inputs)
+		# oginputs.copy_(inputs)
 		g.replay()
 		torch.cuda.synchronize()
 		nvtx.range_pop()
