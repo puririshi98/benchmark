@@ -74,7 +74,6 @@ if __name__ == "__main__":
 	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
-		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
 		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
@@ -84,7 +83,7 @@ if __name__ == "__main__":
 		if i!=0:
 			if (previous_out == h_output).all():
 				print("inputs are changing but outputs are not")
-		previous_out=h_output.copy()
+		previous_out=np.copy(h_output.copy())
 	print("using onnxTRT fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 	# time_sum=0
@@ -280,7 +279,7 @@ if __name__ == "__main__":
 		if i!=0:
 			if (previous_out == oginputs).all():
 				print("inputs are changing but outputs are not")
-		previous_out=oginputs.copy()
+		previous_out=np.copy(oginputs.copy())
 	nvtx.range_pop()
 	print("using torchcudagraphsonnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
