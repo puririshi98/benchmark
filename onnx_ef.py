@@ -90,63 +90,63 @@ if __name__ == "__main__":
 	print("using onnxTRT fp32 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 
-	# #fp16 cudagraphsonnxTRT
-	# time_sum=0
-	# torch.backends.cudnn.benchmark = True
-	# s = torch.cuda.Stream()
-	# torch.cuda.synchronize()
-	# # h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
-	# # oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-	# # ogoutputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+	#fp16 cudagraphsonnxTRT
+	time_sum=0
+	torch.backends.cudnn.benchmark = True
+	s = torch.cuda.Stream()
+	torch.cuda.synchronize()
+	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
+	oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+	ogoutputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 	# oginputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	# ogoutputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
-	# nvtx.range_push('warmup and capture')
+	nvtx.range_push('warmup and capture')
 
-	# with torch.cuda.stream(s):
-	# 	for _ in range(5):
-	# 		# inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-	# 		inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
-	# 		# oginputs[:] = inputs
-	# 		# ogoutputs[:] = oginputs * 2
-	# 		oginputs.copy_(inputs)
-	# 		ogoutputs.copy_(oginputs * 2)
-	# 		#res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+	with torch.cuda.stream(s):
+		for _ in range(5):
+			inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+			# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
+			oginputs[:] = inputs
+			# ogoutputs[:] = oginputs * 2
+			# oginputs.copy_(inputs)
+			# ogoutputs.copy_(oginputs * 2)
+			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		
-	# 	torch.cuda.empty_cache()
-	# 	g = torch.cuda._Graph()
-	# 	torch.cuda.synchronize()
-	# 	# inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-	# 	inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
-	# 	# oginputs[:] = inputs
-	# 	oginputs.copy_(inputs)
-	# 	g.capture_begin()
-	# 	# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
-	# 	# res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
-	# 	# ogoutputs[:] = oginputs * 2
-	# 	ogoutputs.copy_(oginputs * 2)
-	# 	g.capture_end()
-	# 	torch.cuda.synchronize()
-	# nvtx.range_pop()
-	# nvtx.range_push("replaying...")
-	# for i in range(5):
-	# 	# inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-	# 	inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
-	# 	nvtx.range_push("Singular Replay")
-	# 	t1=time.time()
-	# 	# oginputs[:]=inputs
-	# 	oginputs.copy_(inputs)
-	# 	g.replay()
-	# 	torch.cuda.synchronize()
-	# 	nvtx.range_pop()
-	# 	time_sum+=time.time()-t1
-	# 	if i!=0:
-	# 		if (previous_out == ogoutputs).all():
-	# 			print("inputs are changing but outputs are not")
-	# 	previous_out=ogoutputs.clone()
-	# 	# previous_out=np.copy(ogoutputs.copy())
-	# nvtx.range_pop()
-	# print("using torchcudagraphsonnxTRT fp16 mode:")
-	# print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
+		torch.cuda.empty_cache()
+		g = torch.cuda._Graph()
+		torch.cuda.synchronize()
+		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+		# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
+		oginputs[:] = inputs
+		oginputs.copy_(inputs)
+		g.capture_begin()
+		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+		res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+		# ogoutputs[:] = oginputs * 2
+		ogoutputs.copy_(oginputs * 2)
+		g.capture_end()
+		torch.cuda.synchronize()
+	nvtx.range_pop()
+	nvtx.range_push("replaying...")
+	for i in range(5):
+		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+		# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
+		nvtx.range_push("Singular Replay")
+		t1=time.time()
+		oginputs[:]=inputs
+		oginputs.copy_(inputs)
+		g.replay()
+		torch.cuda.synchronize()
+		nvtx.range_pop()
+		time_sum+=time.time()-t1
+		if i!=0:
+			if (previous_out == ogoutputs).all():
+				print("inputs are changing but outputs are not")
+		# previous_out=ogoutputs.clone()
+		previous_out=np.copy(ogoutputs.copy())
+	nvtx.range_pop()
+	print("using torchcudagraphsonnxTRT fp16 mode:")
+	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 
 
 
