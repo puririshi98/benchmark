@@ -92,7 +92,7 @@ if __name__ == "__main__":
 	#fp16 cudagraphsonnxTRT
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	s = torch.cuda.Stream()
+	# s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
 	oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 	# ogoutputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	nvtx.range_push('warmup and capture')
 
-	with torch.cuda.stream(s):
+	with torch.cuda.stream(stream):
 		for _ in range(5):
 			inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 			# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 			# ogoutputs[:] = oginputs * 2
 			# oginputs.copy_(inputs)
 			# ogoutputs.copy_(oginputs * 2)
-			h_input[:]=inputs.reshape(-1)
+			h_input[:]=oginputs.reshape(-1)
 			cuda.memcpy_htod_async(d_input, h_input, stream)
 			# Run inference.
 			context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
@@ -124,8 +124,6 @@ if __name__ == "__main__":
 		oginputs[:] = inputs
 		# oginputs.copy_(inputs)
 		h_input[:] = oginputs.reshape(-1)
-		cuda.memcpy_htod_async(d_input, h_input, stream)
-		h_input[:]=inputs.reshape(-1)
 		cuda.memcpy_htod_async(d_input, h_input, stream)
 		g.capture_begin()
 		context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
