@@ -77,10 +77,10 @@ if __name__ == "__main__":
 	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
-		
+		nvtx.range_push("Singular Inference")
 		res = inference(engine, context, inputs, h_input, h_output, d_input, d_output, stream)
 		# print(type(res))
-		
+		nvtx.range_pop()
 		time_sum+=time.time()-t1
 		if i!=0:
 			if (previous_out == h_output).all():
