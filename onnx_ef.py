@@ -45,7 +45,7 @@ def inference(engine, context, inputs, h_input, h_output, d_input, d_output, str
 
 def alloc_buf(engine,dtype):
 	h_input = cuda.pagelocked_empty(trt.volume((1,3,224,224)), dtype=dtype)
-	h_output = cuda.pagelocked_empty(trt.volume(1,3,224,224), dtype=dtype)
+	h_output = cuda.pagelocked_empty(trt.volume((1,3,224,224)), dtype=dtype)
 	# Allocate device memory for inputs and outputs.
 	d_input = cuda.mem_alloc(h_input.nbytes)
 	d_output = cuda.mem_alloc(h_output.nbytes)
