@@ -26,8 +26,7 @@ def build_engine(model_path):
 # context.execute_async(1, [int(in_gpu), int(out_gpu)], stream.handle, None)
 # cuda.memcpy_dtoh_async(out_cpu, out_gpu, stream)
 # stream.synchronize()
-def inference(engine, context, inputs, h_input, h_output, d_input, d_output, stream):
-	h_input[:]=inputs
+def inference(engine, context, h_input, h_output, d_input, d_output, stream):
 	cuda.memcpy_htod_async(d_input, h_input, stream)
 	# Run inference.
 	context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
@@ -78,8 +77,8 @@ if __name__ == "__main__":
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
 		
-
-		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+		h_input[:]=inputs.reshape(-1)
+		res = inference(engine, context, h_input, h_output, d_input, d_output, stream)
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
@@ -110,7 +109,8 @@ if __name__ == "__main__":
 			# ogoutputs[:] = oginputs * 2
 			# oginputs.copy_(inputs)
 			# ogoutputs.copy_(oginputs * 2)
-			res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+			h_input[:] = inputs.reshape(-1)
+			res = inference(engine, context, h_input, h_output, d_input, d_output, stream)
 		
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
@@ -119,8 +119,9 @@ if __name__ == "__main__":
 		# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 		oginputs[:] = inputs
 		# oginputs.copy_(inputs)
+		h_input[:] = oginputs.reshape(-1)
 		g.capture_begin()
-		res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
+		res = inference(engine, context, h_input, h_output, d_input, d_output, stream)
 		# ogoutputs[:] = oginputs * 2
 		# ogoutputs.copy_(oginputs * 2)
 		g.capture_end()
@@ -134,6 +135,7 @@ if __name__ == "__main__":
 		t1=time.time()
 		oginputs[:]=inputs
 		# oginputs.copy_(inputs)
+		h_input[:] = oginputs.reshape(-1)
 		g.replay()
 		torch.cuda.synchronize()
 		nvtx.range_pop()
@@ -148,20 +150,6 @@ if __name__ == "__main__":
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
 
 
-
-	# time_sum=0
-	# h_input, h_output, d_input, d_output, stream = alloc_buf(engine,np.float16)
-	# for i in range(5):
-	# 	inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-	# 	t1 = time.time()
-	# 	# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
-		
-	# 	res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
-	# 	# print(type(res))
-		
-	# 	time_sum+=time.time()-t1
-	# print("using onnxTRT fp16 mode:")
-	# print("avg cost time: ", round(1000*time_sum/(i+1),4),'ms')
 
 
 
