@@ -120,7 +120,6 @@ if __name__ == "__main__":
 		oginputs[:] = inputs
 		oginputs.copy_(inputs)
 		g.capture_begin()
-		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 		res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		# ogoutputs[:] = oginputs * 2
 		ogoutputs.copy_(oginputs * 2)
