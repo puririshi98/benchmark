@@ -26,7 +26,8 @@ def build_engine(model_path):
 # context.execute_async(1, [int(in_gpu), int(out_gpu)], stream.handle, None)
 # cuda.memcpy_dtoh_async(out_cpu, out_gpu, stream)
 # stream.synchronize()
-def inference(engine, context, h_input, h_output, d_input, d_output, stream):
+def inference(engine, context, inputs, h_input, h_output, d_input, d_output, stream):
+	h_input[:]=inputs.reshape(-1)
 	cuda.memcpy_htod_async(d_input, h_input, stream)
 	# Run inference.
 	context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
@@ -77,8 +78,7 @@ if __name__ == "__main__":
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
 		
-		h_input[:]=inputs.reshape(-1)
-		res = inference(engine, context, h_input, h_output, d_input, d_output, stream)
+		res = inference(engine, context, inputs, h_input, h_output, d_input, d_output, stream)
 		# print(type(res))
 		
 		time_sum+=time.time()-t1
@@ -109,8 +109,12 @@ if __name__ == "__main__":
 			# ogoutputs[:] = oginputs * 2
 			# oginputs.copy_(inputs)
 			# ogoutputs.copy_(oginputs * 2)
-			h_input[:] = inputs.reshape(-1)
-			res = inference(engine, context, h_input, h_output, d_input, d_output, stream)
+			h_input[:]=inputs.reshape(-1)
+			cuda.memcpy_htod_async(d_input, h_input, stream)
+			# Run inference.
+			context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
+			# Transfer predictions back from the GPU.
+			cuda.memcpy_dtoh_async(h_output, d_output, stream)
 		
 		torch.cuda.empty_cache()
 		g = torch.cuda._Graph()
@@ -120,11 +124,15 @@ if __name__ == "__main__":
 		oginputs[:] = inputs
 		# oginputs.copy_(inputs)
 		h_input[:] = oginputs.reshape(-1)
+		cuda.memcpy_htod_async(d_input, h_input, stream)
+		h_input[:]=inputs.reshape(-1)
+		cuda.memcpy_htod_async(d_input, h_input, stream)
 		g.capture_begin()
-		res = inference(engine, context, h_input, h_output, d_input, d_output, stream)
+		context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
 		# ogoutputs[:] = oginputs * 2
 		# ogoutputs.copy_(oginputs * 2)
 		g.capture_end()
+		cuda.memcpy_dtoh_async(h_output, d_output, stream)
 		torch.cuda.synchronize()
 	nvtx.range_pop()
 	nvtx.range_push("replaying...")
@@ -136,7 +144,9 @@ if __name__ == "__main__":
 		oginputs[:]=inputs
 		# oginputs.copy_(inputs)
 		h_input[:] = oginputs.reshape(-1)
+		cuda.memcpy_htod_async(d_input, h_input, stream)
 		g.replay()
+		cuda.memcpy_dtoh_async(h_output, d_output, stream)
 		torch.cuda.synchronize()
 		nvtx.range_pop()
 		time_sum+=time.time()-t1
