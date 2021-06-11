@@ -27,6 +27,7 @@ def build_engine(model_path):
 # cuda.memcpy_dtoh_async(out_cpu, out_gpu, stream)
 # stream.synchronize()
 def inference(engine, context, inputs, h_input, h_output, d_input, d_output, stream):
+	h_input[:]=inputs
 	cuda.memcpy_htod_async(d_input, h_input, stream)
 	# Run inference.
 	context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
