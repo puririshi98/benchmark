@@ -7,7 +7,9 @@ import pycuda.driver as cuda
 import time
 import tensorrt as trt
 import torch.cuda.nvtx as nvtx
-
+import os
+import timm.models.efficientnet
+import timm
 
 
 
@@ -52,9 +54,7 @@ def alloc_buf(engine,dtype):
 	stream = cuda.Stream()
 
 	return h_input, h_output, d_input, d_output, stream
-import os
-import timm.models.efficientnet
-import timm
+
 if __name__ == "__main__":
 	if not os.path.exists(os.getcwd()+os.sep+'ef.onnx'):
 		dummy_input = torch.randn(1, 3, 224, 224).cuda()
@@ -100,37 +100,37 @@ if __name__ == "__main__":
 	# oginputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	# ogoutputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	nvtx.range_push('warmup and capture')
-	with torch.cuda.stream(s):
-		for _ in range(5):
-			inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-			# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
-			oginputs[:] = inputs
-			# ogoutputs[:] = oginputs * 2
-			# oginputs.copy_(inputs)
-			# ogoutputs.copy_(oginputs * 2)
-			h_input[:]=oginputs.reshape(-1)
-			cuda.memcpy_htod_async(d_input, h_input, stream)
-			# Run inference.
-			context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
-			# Transfer predictions back from the GPU.
-			cuda.memcpy_dtoh_async(h_output, d_output, stream)
-		
-		torch.cuda.empty_cache()
-		g = torch.cuda._Graph()
-		torch.cuda.synchronize()
+	# with torch.cuda.stream(s):
+	for _ in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 		# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 		oginputs[:] = inputs
-		# oginputs.copy_(inputs)
-		h_input[:] = oginputs.reshape(-1)
-		cuda.memcpy_htod_async(d_input, h_input, stream)
-		g.capture_begin()
-		context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
 		# ogoutputs[:] = oginputs * 2
+		# oginputs.copy_(inputs)
 		# ogoutputs.copy_(oginputs * 2)
-		g.capture_end()
+		h_input[:]=oginputs.reshape(-1)
+		cuda.memcpy_htod_async(d_input, h_input, stream)
+		# Run inference.
+		context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
+		# Transfer predictions back from the GPU.
 		cuda.memcpy_dtoh_async(h_output, d_output, stream)
-		torch.cuda.synchronize()
+	
+	torch.cuda.empty_cache()
+	g = torch.cuda._Graph()
+	torch.cuda.synchronize()
+	inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+	# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
+	oginputs[:] = inputs
+	# oginputs.copy_(inputs)
+	h_input[:] = oginputs.reshape(-1)
+	cuda.memcpy_htod_async(d_input, h_input, stream)
+	g.capture_begin()
+	context.execute_async(bindings=[int(d_input), int(d_output)], stream_handle=stream.handle)
+	# ogoutputs[:] = oginputs * 2
+	# ogoutputs.copy_(oginputs * 2)
+	g.capture_end()
+	cuda.memcpy_dtoh_async(h_output, d_output, stream)
+	torch.cuda.synchronize()
 	nvtx.range_pop()
 	nvtx.range_push("replaying...")
 	for i in range(5):
