@@ -56,10 +56,11 @@ def alloc_buf(engine,dtype):
 import timm.models.efficientnet
 import timm
 if __name__ == "__main__":
-	dummy_input = torch.randn(1, 3, 224, 224).cuda()
-	model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float()
+	if not os.path.exists(os.getcwd()+os.sep+'ef.onnx'):
+		dummy_input = torch.randn(1, 3, 224, 224).cuda()
+		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float()
 
-	torch.onnx.export(model, dummy_input, "ef.onnx", verbose=False)
+		torch.onnx.export(model, dummy_input, "ef.onnx", verbose=False)
 
 	TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 	model_path ="ef.onnx"
