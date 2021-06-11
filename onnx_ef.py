@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	model_path ="ef.onnx"
 	input_size = 224
 	TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-	EXPLICIT_BATCH = (1,3,224,224)
+	EXPLICIT_BATCH = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
 	engine = build_engine(model_path)
 	print("Engine Created :", type(engine))
 	context = engine.create_execution_context()
