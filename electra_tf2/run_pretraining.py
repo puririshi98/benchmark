@@ -433,15 +433,13 @@ def main(e2e_start_time):
 
 		metrics["train_perf"].update_state(
 			config.train_batch_size * get_world_size() / (time.time() - iter_start))
-		if int(config.train_batch_size * get_world_size() / (time.time() - iter_start))>3000 or started:
+		if int(config.train_batch_size * get_world_size() / (time.time() - iter_start))>3000:
 			if not started:
 				lib.cudaProfilerStart()
 				started=True
-			else:
-				profd_iters+=1
-			if profd_iters >=3:
-				lib.cudaProfilerStop()
-				sys.exit()
+		if local_step % args.gradient_accumulation_steps == 0 and started:
+			lib.cudaProfilerStop()
+			sys.exit()
 		metrics["total_loss"].update_state(values=total_loss)
 		metric_fn(config, metrics, eval_fn_inputs)
 
