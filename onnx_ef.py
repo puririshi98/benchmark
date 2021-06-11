@@ -95,7 +95,7 @@ if __name__ == "__main__":
 	torch.backends.cudnn.benchmark = True
 	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
-	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
+	# h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
 	# oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 	# ogoutputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 	oginputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
