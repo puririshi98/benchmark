@@ -92,7 +92,7 @@ if __name__ == "__main__":
 	#fp16 cudagraphsonnxTRT
 	time_sum=0
 	torch.backends.cudnn.benchmark = True
-	# s = torch.cuda.Stream()
+	s = torch.cuda.Stream()
 	torch.cuda.synchronize()
 	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
 	oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 	# ogoutputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	nvtx.range_push('warmup and capture')
 
-	with cuda.stream(stream):
+	with torch.cuda.stream(s) as stream:
 		for _ in range(5):
 			inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 			# inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
