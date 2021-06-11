@@ -5,7 +5,7 @@ import timm
 import time
 import numpy as np
 # create some regular pytorch model...
-model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float().eval()
+model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).float().eval().cuda()
 
 # create example data
 x = torch.ones((1, 3, 224, 224)).cuda()
