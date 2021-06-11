@@ -96,7 +96,7 @@ if __name__ == "__main__":
 	torch.cuda.synchronize()
 	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float16)
 	oginputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
-	ogoutputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+	# ogoutputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
 	# oginputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	# ogoutputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 	nvtx.range_push('warmup and capture')
@@ -141,10 +141,10 @@ if __name__ == "__main__":
 		nvtx.range_pop()
 		time_sum+=time.time()-t1
 		if i!=0:
-			if (previous_out == ogoutputs).all():
+			if (previous_out == h_output).all():
 				print("inputs are changing but outputs are not")
 		# previous_out=ogoutputs.clone()
-		previous_out=np.copy(ogoutputs.copy())
+		previous_out=np.copy(h_output.copy())
 	nvtx.range_pop()
 	print("using torchcudagraphsonnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
