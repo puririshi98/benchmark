@@ -70,13 +70,13 @@ if __name__ == "__main__":
 	context = engine.create_execution_context()
 	print("Context executed ", type(context))
 
-	h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
 	time_sum=0
 	for i in range(5):
 		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float32)
 		t1 = time.time()
 		# in_cpu, out_cpu, in_gpu, out_gpu, stream = alloc_buf(engine)
-		
+		h_input, h_output, d_input, d_output, stream = alloc_buf(engine, np.float32)
+
 		res = inference(engine, context, inputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		# print(type(res))
 		
