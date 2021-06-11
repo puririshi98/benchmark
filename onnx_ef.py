@@ -129,7 +129,8 @@ if __name__ == "__main__":
 	nvtx.range_pop()
 	nvtx.range_push("replaying...")
 	for i in range(5):
-		inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+		# inputs = np.random.random((1, 3, input_size, input_size)).astype(np.float16)
+		inputs = torch.randn((1, 3, input_size, input_size)).cuda().half()
 		nvtx.range_push("Singular Replay")
 		t1=time.time()
 		# oginputs[:]=inputs
