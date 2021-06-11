@@ -122,7 +122,7 @@ if __name__ == "__main__":
 		g.capture_begin()
 		res = inference(engine, context, oginputs.reshape(-1), h_input, h_output, d_input, d_output, stream)
 		# ogoutputs[:] = oginputs * 2
-		ogoutputs.copy_(oginputs * 2)
+		# ogoutputs.copy_(oginputs * 2)
 		g.capture_end()
 		torch.cuda.synchronize()
 	nvtx.range_pop()
