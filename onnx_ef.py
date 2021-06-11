@@ -278,9 +278,9 @@ if __name__ == "__main__":
 		nvtx.range_pop()
 		time_sum+=time.time()-t1
 		if i!=0:
-			if (previous_out == h_output).all():
+			if (previous_out == oginputs).all():
 				print("inputs are changing but outputs are not")
-		previous_out=h_output.copy()
+		previous_out=oginputs.copy()
 	nvtx.range_pop()
 	print("using torchcudagraphsonnxTRT fp16 mode:")
 	print("avg cost time: ", round(1000.0*time_sum/5.0,4),'ms')
