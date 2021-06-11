@@ -2,7 +2,7 @@ import torch
 from torch2trt import torch2trt
 import timm.models.efficientnet
 import timm
-import time.time()
+import time
 # create some regular pytorch model...
 model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float().eval()
 
