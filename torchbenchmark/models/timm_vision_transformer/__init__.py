@@ -130,7 +130,7 @@ class Model(BenchmarkModel):
 					for _ in range(100):
 						g.replay()
 						torch.cuda.synchronize()
-					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0),"ms")
+					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 					nvtx.range_pop()
 				else:
 					for _ in range(niter):
