@@ -133,9 +133,13 @@ class Model(BenchmarkModel):
 					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 					nvtx.range_pop()
 				else:
-					since=time.time()
-					for _ in range(niter):
+					torch.cuda.synchronize()
+					
+					for i in range(105):
+						if i==5:
+							since=time.time()
 						self._step_eval(precision)
+						torch.cuda.synchronize()
 					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
