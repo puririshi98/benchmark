@@ -58,7 +58,7 @@ def alloc_buf(engine,dtype):
 if __name__ == "__main__":
 	if not os.path.exists(os.getcwd()+os.sep+'ef.onnx'):
 		dummy_input = torch.randn(1, 3, 224, 224).cuda()
-		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float()
+		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float().eval()
 
 		torch.onnx.export(model, dummy_input, "ef.onnx", verbose=False)
 
