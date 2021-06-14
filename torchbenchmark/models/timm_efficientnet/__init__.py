@@ -130,9 +130,11 @@ class Model(BenchmarkModel):
 				else:
 					torch.cuda.synchronize()
 					
-					for i in range(105):
-						if i==5:
-							since=time.time()
+					for i in range(5):
+						self._step_eval(precision)
+						torch.cuda.synchronize()
+					since=time.time()
+					for i in range(100):
 						self._step_eval(precision)
 						torch.cuda.synchronize()
 					print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
