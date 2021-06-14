@@ -128,8 +128,10 @@ class Model(BenchmarkModel):
 					print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 					nvtx.range_pop()
 				else:
-					for _ in range(niter):
+					since=time.time()
+					for _ in range(100):
 						self._step_eval(precision)
+					print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
 		for jit in [False, True]:

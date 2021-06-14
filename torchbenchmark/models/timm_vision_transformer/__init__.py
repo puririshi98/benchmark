@@ -133,8 +133,10 @@ class Model(BenchmarkModel):
 					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 					nvtx.range_pop()
 				else:
+					since=time.time()
 					for _ in range(niter):
 						self._step_eval(precision)
+					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
 		for jit in [False, True]:
