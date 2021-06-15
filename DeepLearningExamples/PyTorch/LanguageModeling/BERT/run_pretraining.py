@@ -578,23 +578,23 @@ def main():
 			
 			for f_id in range(f_start_id + 1 , len(files)):
 				
-   
-				if get_world_size() > num_files:
-					data_file = files[(f_id*get_world_size()+get_rank() + remainder*f_id)%num_files]
-				else:
-					data_file = files[(f_id*get_world_size()+get_rank())%num_files]
-
-				previous_file = data_file
-
-				dataset_future = pool.submit(create_pretraining_dataset, data_file, args.max_predictions_per_seq, shared_file_list, args, worker_init)
-
-				train_iter = tqdm(train_dataloader, desc="Iteration", disable=args.disable_progress_bar) if is_main_process() else train_dataloader
-
-				if raw_train_start is None:
-					raw_train_start = time.time()
-				s = torch.cuda.Stream()
+   				s = torch.cuda.Stream()
 				torch.cuda.synchronize()
 				with torch.cuda.stream(s):
+					if get_world_size() > num_files:
+						data_file = files[(f_id*get_world_size()+get_rank() + remainder*f_id)%num_files]
+					else:
+						data_file = files[(f_id*get_world_size()+get_rank())%num_files]
+
+					previous_file = data_file
+
+					dataset_future = pool.submit(create_pretraining_dataset, data_file, args.max_predictions_per_seq, shared_file_list, args, worker_init)
+
+					train_iter = tqdm(train_dataloader, desc="Iteration", disable=args.disable_progress_bar) if is_main_process() else train_dataloader
+
+					if raw_train_start is None:
+						raw_train_start = time.time()
+				
 					nvtx.range_push("warming up")
 					for step, batch in enumerate(train_iter):
 						if (args.cudagraphs and step < 5 * args.gradient_accumulation_steps) or (not args.cudagraphs):
