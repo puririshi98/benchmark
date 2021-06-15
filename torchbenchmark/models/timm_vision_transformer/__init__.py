@@ -137,11 +137,11 @@ class Model(BenchmarkModel):
 				
 				for i in range(5):
 					self._step_eval(precision)
-				torch.cuda.synchronize()
+					torch.cuda.synchronize()
 				since=time.time()
 				for i in range(100):
 					self._step_eval(precision)
-				torch.cuda.synchronize()
+					torch.cuda.synchronize()
 				print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
