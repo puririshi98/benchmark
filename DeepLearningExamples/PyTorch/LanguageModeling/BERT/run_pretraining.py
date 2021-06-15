@@ -597,7 +597,7 @@ def main():
 				with torch.cuda.stream(s):
 					nvtx.range_push("warming up")
 					for step, batch in enumerate(train_iter):
-						if (args.cudagraphs and step < 5) or (not args.cudagraphs):
+						if (args.cudagraphs and step < 5 * args.gradient_accumulation_steps) or (not args.cudagraphs):
 							training_steps += 1
 							batch = [t.to(device) for t in batch]
 							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
