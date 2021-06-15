@@ -403,8 +403,8 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 def fwd_bwd(features, scaler, model, config):
-	with torch.cuda.amp.autocast(enabled=config.amp):
-		total_loss, eval_fn_inputs = model(features)
+	with torch.cuda.amp.autocast(enabled=False):
+		total_loss, eval_fn_inputs = model.half()(features.half())
 		if config.n_gpu > 1:
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 		if config.gradient_accumulation_steps > 1:
@@ -751,7 +751,7 @@ def main():
 	logger.info("  Gradient Accumulation steps = %d", config.gradient_accumulation_steps)
 	logger.info("  Total optimization steps = %d", config.num_train_steps)
 
-	model.train()
+	model.train().half()
 	local_step = 0
 	warming_up=True
 	replaying=False
