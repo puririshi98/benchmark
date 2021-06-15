@@ -578,7 +578,7 @@ def main():
 			
 			for f_id in range(f_start_id + 1 , len(files)):
 				
-   				s = torch.cuda.Stream()
+				s = torch.cuda.Stream()
 				torch.cuda.synchronize()
 				with torch.cuda.stream(s):
 					if get_world_size() > num_files:
