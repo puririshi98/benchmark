@@ -404,7 +404,7 @@ def set_seed(args):
 
 def fwd_bwd(features, scaler, model, config):
 	with torch.cuda.amp.autocast(enabled=False):
-		total_loss, eval_fn_inputs = model.half()(features.half())
+		total_loss, eval_fn_inputs = model.half()(features)
 		if config.n_gpu > 1:
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 		if config.gradient_accumulation_steps > 1:
@@ -515,9 +515,9 @@ class data_prefetcher():
 		try:
 			batch= tuple(t for t in next(self.loader))
 			self.features = {
-				"input_ids": batch[0].cuda(non_blocking=True),
-				"input_mask": batch[1].cuda(non_blocking=True),
-				"segment_ids": batch[2].cuda(non_blocking=True),
+				"input_ids": batch[0].cuda(non_blocking=True).half(),
+				"input_mask": batch[1].cuda(non_blocking=True).half(),
+				"segment_ids": batch[2].cuda(non_blocking=True).half(),
 			}
 		except StopIteration:
 			self.features = None
