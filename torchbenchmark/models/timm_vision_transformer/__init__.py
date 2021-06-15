@@ -99,50 +99,50 @@ class Model(BenchmarkModel):
 	# TODO: use pretrained model weights, assuming the pretrained model is in .data/ dir
 	def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
 		niter = 8
-		with torch.autograd.profiler.emit_nvtx(record_shapes=True):
-			self.model.eval()
-			torch.backends.cudnn.benchmark = bench
-			with torch.no_grad():
-				if precision == 'fp16':
-					self.model = self.model.half()
-				if graphs:
-					s = torch.cuda.Stream()
-					torch.cuda.synchronize()
-					with torch.cuda.stream(s):
-						nvtx.range_push('warming up')
-						print('warming up')
-						for _ in range(5):
-							self._step_eval(precision)
-						nvtx.range_pop()
-						torch.cuda.empty_cache()
-						g = torch.cuda._Graph()
-						torch.cuda.synchronize()
-						nvtx.range_push('capturing graph')
-						print('capturing graph')
-						g.capture_begin()
+		# with torch.autograd.profiler.emit_nvtx(record_shapes=True):
+		self.model.eval()
+		torch.backends.cudnn.benchmark = bench
+		with torch.no_grad():
+			if precision == 'fp16':
+				self.model = self.model.half()
+			if graphs:
+				s = torch.cuda.Stream()
+				torch.cuda.synchronize()
+				with torch.cuda.stream(s):
+					nvtx.range_push('warming up')
+					print('warming up')
+					for _ in range(5):
 						self._step_eval(precision)
-						g.capture_end()
-						nvtx.range_pop()
-						torch.cuda.synchronize()
-					nvtx.range_push('replaying')
-					print('replaying')
-					since=time.time()
-					for _ in range(100):
-						g.replay()
-						torch.cuda.synchronize()
-					print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 					nvtx.range_pop()
-				else:
+					torch.cuda.empty_cache()
+					g = torch.cuda._Graph()
 					torch.cuda.synchronize()
-					
-					for i in range(5):
-						self._step_eval(precision)
-						torch.cuda.synchronize()
-					since=time.time()
-					for i in range(100):
-						self._step_eval(precision)
-						torch.cuda.synchronize()
-					print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+					nvtx.range_push('capturing graph')
+					print('capturing graph')
+					g.capture_begin()
+					self._step_eval(precision)
+					g.capture_end()
+					nvtx.range_pop()
+					torch.cuda.synchronize()
+				nvtx.range_push('replaying')
+				print('replaying')
+				since=time.time()
+				for _ in range(100):
+					g.replay()
+					torch.cuda.synchronize()
+				print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+				nvtx.range_pop()
+			else:
+				torch.cuda.synchronize()
+				
+				for i in range(5):
+					self._step_eval(precision)
+					torch.cuda.synchronize()
+				since=time.time()
+				for i in range(100):
+					self._step_eval(precision)
+					torch.cuda.synchronize()
+				print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
 		for jit in [False, True]:
