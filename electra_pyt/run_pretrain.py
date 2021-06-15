@@ -403,8 +403,8 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 def fwd_bwd(features, scaler, model, config):
-	with torch.cuda.amp.autocast(enabled=False):
-		total_loss, eval_fn_inputs = model.half()(features)
+	with torch.cuda.amp.autocast(enabled=config.amp):
+		total_loss, eval_fn_inputs = model(features)
 		if config.n_gpu > 1:
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 		if config.gradient_accumulation_steps > 1:
@@ -515,9 +515,9 @@ class data_prefetcher():
 		try:
 			batch= tuple(t for t in next(self.loader))
 			self.features = {
-				"input_ids": batch[0].cuda(non_blocking=True).half(),
-				"input_mask": batch[1].cuda(non_blocking=True).half(),
-				"segment_ids": batch[2].cuda(non_blocking=True).half(),
+				"input_ids": batch[0].cuda(non_blocking=True),
+				"input_mask": batch[1].cuda(non_blocking=True),
+				"segment_ids": batch[2].cuda(non_blocking=True),
 			}
 		except StopIteration:
 			self.features = None
@@ -757,7 +757,6 @@ def main():
 	replaying=False
 	torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
-	model=model.half()
 	while step <= config.num_train_steps:
 		for dataloader in dataset_iterator:
 			if step > config.num_train_steps:
