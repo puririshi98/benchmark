@@ -751,12 +751,13 @@ def main():
 	logger.info("  Gradient Accumulation steps = %d", config.gradient_accumulation_steps)
 	logger.info("  Total optimization steps = %d", config.num_train_steps)
 
-	model.train().half()
+	model.train()
 	local_step = 0
 	warming_up=True
 	replaying=False
 	torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
+	model=model.half()
 	while step <= config.num_train_steps:
 		for dataloader in dataset_iterator:
 			if step > config.num_train_steps:
