@@ -373,20 +373,20 @@ def mask(config, inputs, mask_prob,vocab, proposal_distribution=1.0,
     # print(masked_lm_ids.dtype, masked_lm_ids.detach().size())
     # print(masked_lm_weights.dtype, masked_lm_weights.detach().size())
     # sys.exit()
-    # return get_updated_inputs(
-    #     inputs,
-    #     input_ids=inputs_ids.detach(),
-    #     masked_lm_positions=masked_lm_positions,
-    #     masked_lm_ids=masked_lm_ids,
-    #     masked_lm_weights=masked_lm_weights
-    # )
     return get_updated_inputs(
         inputs,
         input_ids=inputs_ids.detach(),
         masked_lm_positions=masked_lm_positions,
         masked_lm_ids=masked_lm_ids,
-        masked_lm_weights=masked_lm_weights.half()
+        masked_lm_weights=masked_lm_weights
     )
+    # return get_updated_inputs(
+    #     inputs,
+    #     input_ids=inputs_ids.detach(),
+    #     masked_lm_positions=masked_lm_positions,
+    #     masked_lm_ids=masked_lm_ids,
+    #     masked_lm_weights=masked_lm_weights.half()
+    # )
 
 
 def unmask(inputs: Inputs):
