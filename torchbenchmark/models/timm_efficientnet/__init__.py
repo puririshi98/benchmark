@@ -104,8 +104,8 @@ class Model(BenchmarkModel):
 		with torch.no_grad():
 			if precision == 'fp16':
 				self.model = self.model.half()
-			# elif precision == 'bfloat16':
-			# 	self.model=self.model.bfloat16()
+			elif precision == 'bfloat16':
+				self.model=self.model.float()
 			if graphs:
 				s = torch.cuda.Stream()
 				torch.cuda.synchronize()
