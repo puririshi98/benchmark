@@ -1164,8 +1164,8 @@ try:
     import apex.normalization
 
     # apex.amp.register_float_function(apex.normalization.FusedLayerNorm, 'forward')
-    #BertLayerNorm = apex.normalization.FusedLayerNorm
-    BertLayerNorm = nn.LayerNorm
+    BertLayerNorm = apex.normalization.FusedLayerNorm
+    #BertLayerNorm = nn.LayerNorm
 except ImportError:
     logger.warning("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex.")
     BertLayerNorm = nn.LayerNorm
