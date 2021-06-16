@@ -1160,8 +1160,8 @@ ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish, "gelu_
 
 try:
     import apex
-    # apex.amp.register_half_function(apex.normalization.fused_layer_norm, 'FusedLayerNorm')
     import apex.normalization
+    apex.amp.register_half_function(apex.normalization.fused_layer_norm, 'FusedLayerNorm')
 
     # apex.amp.register_float_function(apex.normalization.FusedLayerNorm, 'forward')
     BertLayerNorm = apex.normalization.FusedLayerNorm
