@@ -1163,7 +1163,7 @@ try:
     import apex.normalization
     apex.amp.register_half_function(apex.normalization.fused_layer_norm, 'FusedLayerNorm')
 
-    # apex.amp.register_float_function(apex.normalization.FusedLayerNorm, 'forward')
+    apex.amp.register_half_function(apex.normalization.FusedLayerNorm, 'forward')
     BertLayerNorm = apex.normalization.FusedLayerNorm
     #BertLayerNorm = nn.LayerNorm
 except ImportError:
