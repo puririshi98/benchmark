@@ -228,7 +228,7 @@ def gather_positions(sequence, positions):
     position_shift = torch.unsqueeze(L * torch.arange(B, device=positions.device), -1)
     flat_positions = torch.reshape(positions + position_shift, [-1])
     flat_sequence = torch.reshape(sequence, [B * L, D])
-    gathered = flat_sequence[flat_positions.long()]
+    gathered = flat_sequence[flat_positions]
     if depth_dimension:
         return torch.reshape(gathered, [B, -1, D])
     else:
@@ -383,8 +383,8 @@ def mask(config, inputs, mask_prob,vocab, proposal_distribution=1.0,
     return get_updated_inputs(
         inputs,
         input_ids=inputs_ids.detach(),
-        masked_lm_positions=masked_lm_positions.half(),
-        masked_lm_ids=masked_lm_ids.half(),
+        masked_lm_positions=masked_lm_positions,
+        masked_lm_ids=masked_lm_ids,
         masked_lm_weights=masked_lm_weights.half()
     )
 
