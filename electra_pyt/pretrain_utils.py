@@ -372,6 +372,7 @@ def mask(config, inputs, mask_prob,vocab, proposal_distribution=1.0,
     print(type(masked_lm_positions))
     print(type(masked_lm_ids))
     print(type(masked_lm_weights))
+    assert 1==2
     return get_updated_inputs(
         inputs,
         input_ids=inputs_ids.detach(),
