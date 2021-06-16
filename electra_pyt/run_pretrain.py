@@ -237,7 +237,7 @@ class PretrainingModel(nn.Module):
 		config = self._config
 
 		# Mask the input
-		masked_inputs = pretrain_utils.mask(config, pretrain_utils.features_to_inputs(features), config.mask_prob, self.vocab)
+		masked_inputs = pretrain_utils.mask(config, pretrain_utils.features_to_inputs(features), config.mask_prob, self.vocab).half()
 		# Generator
 		if config.uniform_generator:
 			mlm_output = self._get_masked_lm_output(masked_inputs, None)
@@ -403,7 +403,8 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 def fwd_bwd(features, scaler, model, config):
-	with torch.cuda.amp.autocast(enabled=config.amp):
+	# with torch.cuda.amp.autocast(enabled=config.amp):
+	with torch.cuda.amp.autocast(enabled=False):
 		total_loss, eval_fn_inputs = model(features)
 		if config.n_gpu > 1:
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
