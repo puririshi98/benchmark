@@ -692,7 +692,7 @@ def main():
 	# optimizer = AdamW(optimizer_grouped_parameters, lr=config.learning_rate)
 	# if config.amp:
 	#     model, optimizer = amp.initialize(model, optimizer, opt_level=config.amp_opt_level)
-	scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
+	scaler = torch.cuda.amp.GradScaler(enabled=False)
 
 	scheduler = get_poly_schedule_with_warmup(
 		optimizer,
