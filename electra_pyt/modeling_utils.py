@@ -1306,9 +1306,9 @@ class BertSelfOutput(nn.Module):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
         # use fp32 for apex norm
-        with torch.cuda.amp.autocast(enabled=False):
+        # with torch.cuda.amp.autocast(enabled=False):
             # hidden_states = self.LayerNorm(hidden_states.float() + input_tensor.float())
-            hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        hidden_states = self.LayerNorm(hidden_states + input_tensor)
         return hidden_states
 
 
