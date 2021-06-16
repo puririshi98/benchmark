@@ -403,9 +403,9 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 def fwd_bwd(features, scaler, model, config):
-	with torch.cuda.amp.autocast(enabled=config.amp):
-	# with torch.cuda.amp.autocast(enabled=False):
-		# total_loss, eval_fn_inputs = model.half()(features)
+	#with torch.cuda.amp.autocast(enabled=config.amp):
+	with torch.cuda.amp.autocast(enabled=False):
+		total_loss, eval_fn_inputs = model.half()(features)
 		total_loss, eval_fn_inputs = model(features)
 		if config.n_gpu > 1:
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
