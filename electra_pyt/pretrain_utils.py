@@ -368,10 +368,10 @@ def mask(config, inputs, mask_prob,vocab, proposal_distribution=1.0,
         inputs.input_ids,
         torch.full([B, N], vocab["[MASK]"], dtype=inputs.input_ids.dtype, device=device),
         replace_with_mask_positions)
-    print(type(inputs_ids.detach()))
-    print(type(masked_lm_positions))
-    print(type(masked_lm_ids))
-    print(type(masked_lm_weights))
+    print(inputs_ids.detach().dtype)
+    print(masked_lm_positions.dtype)
+    print(masked_lm_ids.dtype)
+    print(masked_lm_weights.dtype)
     sys.exit()
     return get_updated_inputs(
         inputs,
