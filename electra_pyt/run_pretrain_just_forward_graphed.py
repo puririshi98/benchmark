@@ -691,7 +691,11 @@ def main():
 							  max_grad_norm=1.0,
 							  use_nvlamb=not config.skip_adaptive)
 	elif config.optimizer.lower() == "adam":
-		optimizer = FusedAdam(optimizer_grouped_parameters,
+		# optimizer = FusedAdam(optimizer_grouped_parameters,
+		# 					  lr=config.learning_rate,
+		# 					  betas=(config.opt_beta_1, config.opt_beta_2),
+		# 					  eps=1e-6, bias_correction=False)
+		optimizer = torch.optim.Adam(optimizer_grouped_parameters,
 							  lr=config.learning_rate,
 							  betas=(config.opt_beta_1, config.opt_beta_2),
 							  eps=1e-6, bias_correction=False)
