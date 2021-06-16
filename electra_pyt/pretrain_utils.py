@@ -370,7 +370,7 @@ def mask(config, inputs, mask_prob,vocab, proposal_distribution=1.0,
         replace_with_mask_positions)
     return get_updated_inputs(
         inputs,
-        input_ids=inputs_ids.detach().half(),
+        input_ids=inputs_ids.detach(),
         masked_lm_positions=masked_lm_positions.half(),
         masked_lm_ids=masked_lm_ids.half(),
         masked_lm_weights=masked_lm_weights.half()
