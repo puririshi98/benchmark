@@ -228,7 +228,7 @@ def gather_positions(sequence, positions):
     position_shift = torch.unsqueeze(L * torch.arange(B, device=positions.device), -1)
     flat_positions = torch.reshape(positions + position_shift, [-1])
     flat_sequence = torch.reshape(sequence, [B * L, D])
-    gathered = flat_sequence[flat_positions]
+    gathered = flat_sequence[flat_positions.long()]
     if depth_dimension:
         return torch.reshape(gathered, [B, -1, D])
     else:
