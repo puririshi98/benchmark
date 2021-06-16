@@ -59,6 +59,8 @@ class Model(BenchmarkModel):
 		nvtx.range_push('eval')
 		if precision=='fp16':
 			output = self.model(self.batch.half())
+		elif precision=='bfloat16':
+			output = self.model(self.batch.bfloat16())
 		else:
 			output = self.model(self.batch)
 		nvtx.range_pop()
@@ -105,6 +107,8 @@ class Model(BenchmarkModel):
 		with torch.no_grad():
 			if precision == 'fp16':
 				self.model = self.model.half()
+			elif precision == 'bfloat16':
+				self.model=self.model.bfloat16()
 			if graphs:
 				s = torch.cuda.Stream()
 				torch.cuda.synchronize()
@@ -130,7 +134,7 @@ class Model(BenchmarkModel):
 				for _ in range(100):
 					g.replay()
 					torch.cuda.synchronize()
-				print("Average Replay Time for Vision Transformer:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+				print("Average Replay Time for VT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 				nvtx.range_pop()
 			else:
 				torch.cuda.synchronize()
@@ -142,7 +146,7 @@ class Model(BenchmarkModel):
 				for i in range(100):
 					self._step_eval(precision)
 					torch.cuda.synchronize()
-				print("Average Replay Time for EfficientNet:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+				print("Average Replay Time for VT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 if __name__ == "__main__":
 	for device in ['cpu', 'cuda']:
 		for jit in [False, True]:

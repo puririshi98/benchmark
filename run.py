@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--test", choices=["eval",  "train"], default="eval", help="Which test to run.")
     parser.add_argument("-fuser", choices=["te",  "nv"], default="nv", help="Which fuser to run.")
     parser.add_argument("-graphs", action="store_true", help="use cudagraphs")
-    parser.add_argument("-precision", choices=["fp32",  "fp16"], default="fp16", help="Which precision to run in (fp16 vs fp32).")
+    parser.add_argument("-precision", choices=["fp32",  "fp16", "bfloat16"], default="fp16", help="Which precision to run in (fp16 vs fp32).")
     parser.add_argument("-cudnnbenchmark", action="store_true",  help="turn cudnn benchmark on")
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     parser.add_argument("-batchsize", default=1, type=int,help="Increase batchsize from the default of 1, (only works for visiontransformer rn)")

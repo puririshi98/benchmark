@@ -56,6 +56,8 @@ class Model(BenchmarkModel):
 		nvtx.range_push('eval')
 		if precision=='fp16':
 			output = self.model(self.batch.half())
+		elif precision=='bfloat16':
+			output = self.model(self.batch.bfloat16())
 		else:
 			output = self.model(self.batch)
 		nvtx.range_pop()
@@ -102,6 +104,8 @@ class Model(BenchmarkModel):
 		with torch.no_grad():
 			if precision == 'fp16':
 				self.model = self.model.half()
+			elif precision == 'bfloat16':
+				self.model=self.model.bfloat16()
 			if graphs:
 				s = torch.cuda.Stream()
 				torch.cuda.synchronize()
