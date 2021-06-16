@@ -1161,9 +1161,9 @@ ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish, "gelu_
 try:
     import apex
     import apex.normalization
-    apex.amp.register_half_function(apex.normalization.fused_layer_norm, 'FusedLayerNorm')
+    #apex.amp.register_half_function(apex.normalization.fused_layer_norm, 'FusedLayerNorm')
 
-    apex.amp.register_half_function(apex.normalization.FusedLayerNorm, 'forward')
+    #apex.amp.register_half_function(apex.normalization.FusedLayerNorm, 'forward')
     BertLayerNorm = apex.normalization.FusedLayerNorm
     #BertLayerNorm = nn.LayerNorm
 except ImportError:
@@ -1306,9 +1306,9 @@ class BertSelfOutput(nn.Module):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
         # use fp32 for apex norm
-        #with torch.cuda.amp.autocast(enabled=False):
-            # hidden_states = self.LayerNorm(hidden_states.float() + input_tensor.float())
-        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        with torch.cuda.amp.autocast(enabled=False):
+            hidden_states = self.LayerNorm(hidden_states.float() + input_tensor.float())
+        # hidden_states = self.LayerNorm(hidden_states + input_tensor)
         return hidden_states
 
 
