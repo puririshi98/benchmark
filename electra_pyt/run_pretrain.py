@@ -758,7 +758,7 @@ def main():
 	replaying=False
 	torch.cuda.cudart().cudaProfilerStart()
 	train_start, start_step = time.time(), step - 1
-	model=model.half()
+	# model=model.half()
 	while step <= config.num_train_steps:
 		for dataloader in dataset_iterator:
 			if step > config.num_train_steps:
