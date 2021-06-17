@@ -5,11 +5,12 @@ import torchvision
 print("Loading Model...")
 model = models.resnet18().cuda()
 print("Loading Dataset...")
-imagenet_data = torchvision.datasets.ImageNet(sys.argv[1])
-data_loader = torch.utils.data.DataLoader(imagenet_data,
-                                          batch_size=32,
-                                          shuffle=True,
-                                          num_workers=4)
+dataset=torch.randn((1000,3,224,224)).cuda()
+# imagenet_data = torchvision.datasets.ImageNet(sys.argv[1])
+# data_loader = torch.utils.data.DataLoader(imagenet_data,
+#                                           batch_size=32,
+#                                           shuffle=True,
+#                                           num_workers=4)
 model = model.train().cuda()
 print("FP32 convergence:")
 optimizer=torch.optim.Adam(model.params,lr=1e-4)
