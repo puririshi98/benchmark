@@ -4,7 +4,7 @@ import torchvision.models as models
 import torchvision
 print("Loading Model...")
 model = models.resnet18().cuda()
-print("Loading Dataset...")
+print("Loading Model...")
 imagenet_data = torchvision.datasets.ImageNet(sys.argv[1])
 data_loader = torch.utils.data.DataLoader(imagenet_data,
                                           batch_size=32,
