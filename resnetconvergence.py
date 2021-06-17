@@ -1,6 +1,8 @@
 import torch
 import sys
-model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
+import torchvision.models as models
+
+model = models.resnet18().cuda()
 imagenet_data = torchvision.datasets.ImageNet(sys.argv[1])
 data_loader = torch.utils.data.DataLoader(imagenet_data,
                                           batch_size=32,
