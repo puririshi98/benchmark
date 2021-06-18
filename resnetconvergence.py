@@ -26,7 +26,7 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200:
+	if epoch%200==0:
 		print(l)
 	l.backward()
 	optimizer.step()
@@ -43,7 +43,7 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200:
+	if epoch%200==0:
 		print(l)
 	l.backward()
 	optimizer.step()
@@ -60,7 +60,7 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200:
+	if epoch%200==0:
 		print(l)
 	l.backward()
 	optimizer.step()
