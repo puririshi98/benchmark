@@ -14,7 +14,7 @@ labels = torch.randint((10),(1000,))
 #                                           num_workers=4)
 model = model.train().cuda()
 print("FP32 convergence:")
-optimizer=torch.optim.Adam(model.params,lr=1e-4)
+optimizer=torch.optim.Adam(model.parameters,lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 
 for epoch in range(500):
@@ -33,7 +33,7 @@ for epoch in range(500):
 
 model = model.train().cuda().half()
 print("FP16 convergence:")
-optimizer=torch.optim.Adam(model.params,lr=1e-4)
+optimizer=torch.optim.Adam(model.parameters,lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 for epoch in range(500):
 	optimizer.zero_grad()
@@ -51,7 +51,7 @@ for epoch in range(500):
 
 model = model.train().cuda().bfloat16()
 print("Bfloat16 convergence:")
-optimizer=torch.optim.Adam(model.params,lr=1e-4)
+optimizer=torch.optim.Adam(model.parameters,lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 for epoch in range(500):
 	optimizer.zero_grad()
