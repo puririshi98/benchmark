@@ -27,7 +27,7 @@ for epoch in range(500):
 		output = output[0]
 	l=loss(output, label)
 	if epoch%50:
-		print(loss)
+		print(l)
 	l.backward()
 	optimizer.step()
 
@@ -45,7 +45,7 @@ for epoch in range(500):
 		output = output[0]
 	l=loss(output, label)
 	if epoch%50:
-		print(loss)
+		print(l)
 	l.backward()
 	optimizer.step()
 
@@ -63,7 +63,7 @@ for epoch in range(500):
 		output = output[0]
 	l=loss(output, label)
 	if epoch%50:
-		print(loss)
+		print(l)
 	l.backward()
 	optimizer.step()
 
