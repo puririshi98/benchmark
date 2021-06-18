@@ -30,7 +30,23 @@ for epoch in range(600):
 		print(l)
 	l.backward()
 	optimizer.step()
-
+model = model.train().cuda().bfloat16()
+print("Bfloat16 convergence:")
+optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
+loss=torch.nn.CrossEntropyLoss()
+for epoch in range(600):
+	optimizer.zero_grad()
+	indys=torch.randint(len(data), (32,))
+	batch=data[indys].cuda().bfloat16()
+	label = labels[indys].cuda()
+	output = model(batch)
+	if isinstance(output, tuple):
+		output = output[0]
+	l=loss(output, label)
+	if epoch%200:
+		print(l)
+	l.backward()
+	optimizer.step()
 model = model.train().cuda().half()
 print("FP16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
@@ -49,21 +65,5 @@ for epoch in range(600):
 	l.backward()
 	optimizer.step()
 
-model = model.train().cuda().bfloat16()
-print("Bfloat16 convergence:")
-optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
-loss=torch.nn.CrossEntropyLoss()
-for epoch in range(600):
-	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
-	batch=data[indys].cuda().bfloat16()
-	label = labels[indys].cuda()
-	output = model(batch)
-	if isinstance(output, tuple):
-		output = output[0]
-	l=loss(output, label)
-	if epoch%200:
-		print(l)
-	l.backward()
-	optimizer.step()
+
 
