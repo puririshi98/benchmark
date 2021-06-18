@@ -21,7 +21,7 @@ for epoch in range(500):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
-	label = data[indys].cuda()
+	label = labels[indys].cuda()
 	output = model(batch)
 	if isinstance(output, tuple):
 		output = output[0]
@@ -39,7 +39,7 @@ for epoch in range(500):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda().half()
-	label = data[indys].cuda()
+	label = labels[indys].cuda()
 	output = model(batch)
 	if isinstance(output, tuple):
 		output = output[0]
@@ -57,7 +57,7 @@ for epoch in range(500):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda().bfloat16()
-	label = data[indys].cuda()
+	label = labels[indys].cuda()
 	output = model(batch)
 	if isinstance(output, tuple):
 		output = output[0]
