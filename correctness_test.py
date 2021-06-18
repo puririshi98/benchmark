@@ -28,3 +28,4 @@ fp16=torch.nn.functional.softmax(input.half())
 
 print("mean(FP32-BF16): ",abs(float(torch.mean(fp32-bf).cpu())))
 print("mean(FP32-FP16): ",abs(float(torch.mean(fp32-fp16).cpu())))
+
