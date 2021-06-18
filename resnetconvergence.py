@@ -5,7 +5,7 @@ import torchvision
 print("Loading Model...")
 model = models.resnet18().cuda()
 print("Loading Dataset...")
-dataset=torch.randn((1000,3,224,224)).cuda()
+data=torch.randn((1000,3,224,224)).cuda()
 labels = torch.randint((10),(1000,))
 # imagenet_data = torchvision.datasets.ImageNet(sys.argv[1])
 # data_loader = torch.utils.data.DataLoader(imagenet_data,
