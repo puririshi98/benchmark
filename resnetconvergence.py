@@ -14,7 +14,7 @@ labels = torch.randint((10),(1000,)).long()
 #                                           num_workers=4)
 model = model.train().cuda()
 print("FP32 convergence:")
-optimizer=torch.optim.SGD(model.parameters(),lr=1e-4)
+optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 
 for epoch in range(600):
