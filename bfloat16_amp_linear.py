@@ -35,7 +35,7 @@ for epoch in range(600):
 	if epoch%200==0:
 		print(l)
 		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
-model = models.resnet18().cuda()
+model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
 model = model.train().cuda().bfloat16()
 print("Bfloat16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
@@ -58,7 +58,7 @@ for epoch in range(600):
 	if epoch%200==0:
 		print(l)
 		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
-model = models.resnet18().cuda().bfloat16()
+model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
 model = model.train().cuda()
 print("AMP Bfloat16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
@@ -86,7 +86,7 @@ for epoch in range(600):
 		if epoch%200==0:
 			print(l)
 			print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
-model = models.resnet18().cuda()
+model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
 model = model.train().cuda().half()
 print("FP16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
