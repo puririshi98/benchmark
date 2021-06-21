@@ -70,7 +70,7 @@ for epoch in range(600):
 	since=time.time()
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
-	batch=data[indys].cuda().bfloat16()
+	batch=data[indys].cuda()
 	with torch.cuda.amp.autocast(enabled=True):
 		label = labels[indys].cuda()
 		output = model(batch)
