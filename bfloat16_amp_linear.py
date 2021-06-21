@@ -29,12 +29,12 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200==0:
-		print(l)
-		print("Time Per Iter:",round(1000.0*time_sum/epoch,2),"ms")
 	l.backward()
 	optimizer.step()
 	time_sum+=time.time()-since
+	if epoch%200==0:
+		print(l)
+		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 model = models.resnet18().cuda()
 model = model.train().cuda().bfloat16()
 print("Bfloat16 convergence:")
@@ -52,12 +52,12 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200==0:
-		print(l)
-		print("Time Per Iter:",round(1000.0*time_sum/epoch,2),"ms")
 	l.backward()
 	optimizer.step()
 	time_sum+=time.time()-since
+	if epoch%200==0:
+		print(l)
+		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 model = models.resnet18().cuda().bfloat16()
 model = model.train().cuda()
 print("AMP Bfloat16 convergence:")
@@ -77,15 +77,15 @@ for epoch in range(600):
 		if isinstance(output, tuple):
 			output = output[0]
 		l=loss(output, label)
-		if epoch%200==0:
-			print(l)
-			print("Time Per Iter:",round(1000.0*time_sum/epoch,2),"ms")
+
 		scaler.scale(l).backward()
 		scaler.step(optimizer)
 		optimizer.zero_grad()
 		scaler.update()
 		time_sum+=time.time()-since
-
+		if epoch%200==0:
+			print(l)
+			print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 model = models.resnet18().cuda()
 model = model.train().cuda().half()
 print("FP16 convergence:")
@@ -104,9 +104,10 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200==0:
-		print(l)
-		print("Time Per Iter:",round(1000.0*time_sum/epoch,2),"ms")
+	
 	l.backward()
 	optimizer.step()
 	time_sum+=time.time()-since
+	if epoch%200==0:
+		print(l)
+		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
