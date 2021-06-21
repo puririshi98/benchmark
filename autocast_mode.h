@@ -38,6 +38,18 @@ inline at::ScalarType get_lower_precision_fp_from_device_type(
     DeviceType device_type) {
   switch (device_type) {
     case DeviceType::CUDA:
+      return at::kHalf;
+    case DeviceType::CPU:
+      return get_autocast_cpu_dtype();
+    default:
+      throw std::runtime_error(
+          "unknown device type for autocast in get_lower_precision_fp_from_device_type");
+  }
+}
+inline at::ScalarType get_lower_precision_fp_from_device_type_bf(
+    DeviceType device_type) {
+  switch (device_type) {
+    case DeviceType::CUDA:
       return at::kBFloat16;
     case DeviceType::CPU:
       return get_autocast_cpu_dtype();

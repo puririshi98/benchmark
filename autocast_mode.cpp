@@ -11,12 +11,16 @@
 
 namespace at {
 namespace autocast {
-
+unsigned int (*get_lower_precision_fp_from_device_type)(unsigned int) 
 bool is_enabled() {
   return !c10::impl::tls_is_dispatch_key_excluded(DispatchKey::AutocastCUDA);
 }
 
-void set_enabled(bool new_enabled) {
+void set_enabled(bool new_enabled, bool bfloat) {
+  if (bfloat){
+    (*get_lower_precision_fp_from_device_type) =  get_lower_precision_fp_from_device_type_bf;
+
+  }
   c10::impl::tls_set_dispatch_key_excluded(DispatchKey::AutocastCUDA, !new_enabled);
 }
 
