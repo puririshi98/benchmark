@@ -64,7 +64,7 @@ print("AMP Bfloat16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
-scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
+scaler = torch.cuda.amp.GradScaler(enabled=True)
 time_sum=0
 for epoch in range(600):
 	since=time.time()
