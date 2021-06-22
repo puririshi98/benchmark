@@ -92,17 +92,19 @@ class autocast(object):
     Args:
         enabled(bool, optional, default=True):  Whether autocasting should be enabled in the region.
     """
-    def __init__(self, enabled=True, bfloat=False):
+    def __init__(self, enabled=True, fast_dtype=torch.float16):
         if enabled and amp_definitely_not_available():
             warnings.warn("torch.cuda.amp.autocast only affects CUDA ops, but CUDA is not available.  Disabling.")
             self._enabled = False
         else:
             self._enabled = enabled
-        self.bfloat=bfloat
+        self.fast_dtype=torch.float16
 
     def __enter__(self):
         self.prev = torch.is_autocast_enabled()
-        torch.set_autocast_enabled(self._enabled, self.bfloat)
+        self.prev_fastdtype = torch.get_autocast_gpu_dtype()
+        torch.set_autocast_gpu_dtype(self.fast_dtype)
+        torch.set_autocast_enabled(self._enabled)
         torch.autocast_increment_nesting()
 
     def __exit__(self, *args):
@@ -110,6 +112,7 @@ class autocast(object):
         if torch.autocast_decrement_nesting() == 0:
             torch.clear_autocast_cache()
         torch.set_autocast_enabled(self.prev)
+        torch.set_autocast_gpu_dtype(self.prev_fastdtype)
         return False
 
     def __call__(self, func):

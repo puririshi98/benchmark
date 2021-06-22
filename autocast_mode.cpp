@@ -11,18 +11,11 @@
 
 namespace at {
 namespace autocast {
-at::ScalarType autocast_gpu_dtype = at::kHalf;
 bool is_enabled() {
   return !c10::impl::tls_is_dispatch_key_excluded(DispatchKey::AutocastCUDA);
 }
 
 void set_enabled(bool new_enabled, bool bfloat) {
-  if (bfloat){
-    autocast_gpu_dtype = at::kBFloat16;
-
-  } else {
-    autocast_gpu_dtype = at::kHalf;
-  }
   c10::impl::tls_set_dispatch_key_excluded(DispatchKey::AutocastCUDA, !new_enabled);
 }
 
@@ -65,6 +58,7 @@ thread_local int nesting = 0;
 
 // autocast_cpu_dtype is the lower_precision_fp used by AutocastCPU.
 thread_local at::ScalarType autocast_cpu_dtype = at::kBFloat16;
+at::ScalarType autocast_gpu_dtype = at::kHalf;
 }
 
 void clear_cache() {

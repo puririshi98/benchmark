@@ -259,12 +259,12 @@ PyObject* THPAutograd_initExtension(PyObject* _unused, PyObject *unused) {
 
 namespace torch { namespace autograd {
 
-static PyObject * set_autocast_enabled(PyObject* _unused, PyObject *arg, PyObject *arg2) {
+static PyObject * set_autocast_enabled(PyObject* _unused, PyObject *arg) {
   HANDLE_TH_ERRORS
   if (!PyBool_Check(arg)) {
     throw TypeError("enabled must be a bool (got %s)", Py_TYPE(arg)->tp_name);
   }
-  at::autocast::set_enabled(arg == Py_True, arg2==Py_True);
+  at::autocast::set_enabled(arg == Py_True);
   Py_RETURN_NONE;
   END_HANDLE_TH_ERRORS
 }
