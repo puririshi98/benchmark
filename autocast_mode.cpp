@@ -76,6 +76,7 @@ int decrement_nesting() {
 at::ScalarType get_autocast_cpu_dtype() {
   return autocast_cpu_dtype;
 }
+
 at::ScalarType get_autocast_gpu_dtype() {
   return autocast_gpu_dtype;
 }
@@ -86,6 +87,7 @@ void set_autocast_cpu_dtype(at::ScalarType dtype) {
       "Currently, AutocastCPU only support Bfloat16 as the autocast_cpu_dtype");
   autocast_cpu_dtype = dtype;
 }
+
 void set_autocast_gpu_dtype(at::ScalarType dtype) {
   autocast_gpu_dtype = dtype;
 }
