@@ -11,7 +11,7 @@
 
 namespace at {
 namespace autocast {
-unsigned int (*get_lower_precision_fp_from_device_type)(unsigned int) 
+unsigned int (*get_lower_precision_fp_from_device_type)(unsigned int) = get_lower_precision_fp_from_device_type;
 bool is_enabled() {
   return !c10::impl::tls_is_dispatch_key_excluded(DispatchKey::AutocastCUDA);
 }
