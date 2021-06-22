@@ -11,15 +11,17 @@
 
 namespace at {
 namespace autocast {
-unsigned int (*get_lower_precision_fp_from_device_type)(DeviceType) = get_lower_precision_fp_from_device_type;
+at::ScalarType autocast_gpu_dtype = at::kHalf;
 bool is_enabled() {
   return !c10::impl::tls_is_dispatch_key_excluded(DispatchKey::AutocastCUDA);
 }
 
 void set_enabled(bool new_enabled, bool bfloat) {
   if (bfloat){
-    (*get_lower_precision_fp_from_device_type) =  get_lower_precision_fp_from_device_type_bf;
+    autocast_gpu_dtype = at::kBFloat16;
 
+  } else {
+    autocast_gpu_dtype = at::kHalf;
   }
   c10::impl::tls_set_dispatch_key_excluded(DispatchKey::AutocastCUDA, !new_enabled);
 }
@@ -80,6 +82,9 @@ int decrement_nesting() {
 at::ScalarType get_autocast_cpu_dtype() {
   return autocast_cpu_dtype;
 }
+at::ScalarType get_autocast_gpu_dtype() {
+  return autocast_gpu_dtype;
+}
 
 void set_autocast_cpu_dtype(at::ScalarType dtype) {
   TORCH_CHECK(
@@ -87,7 +92,9 @@ void set_autocast_cpu_dtype(at::ScalarType dtype) {
       "Currently, AutocastCPU only support Bfloat16 as the autocast_cpu_dtype");
   autocast_cpu_dtype = dtype;
 }
-
+void set_autocast_gpu_dtype(at::ScalarType dtype) {
+  autocast_gpu_dtype = dtype;
+}
 // Overload to catch Tensor args
 // TODO (possible optimization):
 // Move cast_cache to an inline function in a header with cached_casts declared as
