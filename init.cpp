@@ -310,7 +310,17 @@ static PyObject * set_autocast_cpu_dtype(PyObject* _unused, PyObject *arg) {
   Py_RETURN_NONE;
   END_HANDLE_TH_ERRORS
 }
-
+static PyObject * set_autocast_gpu_dtype(PyObject* _unused, PyObject *arg) {
+  HANDLE_TH_ERRORS
+  if (!THPDtype_Check(arg)) {
+    throw TypeError(
+        "dtype must be a torch.dtype (got %s)", Py_TYPE(arg)->tp_name);
+  }
+  at::ScalarType targetType = reinterpret_cast<THPDtype*>(arg)->scalar_type;
+  at::autocast::set_autocast_gpu_dtype(targetType);
+  Py_RETURN_NONE;
+  END_HANDLE_TH_ERRORS
+}
 static const char* scalarTypeName(const at::ScalarType type) {
   switch (type) {
 #define DEFINE_CASE(ctype, name) \
