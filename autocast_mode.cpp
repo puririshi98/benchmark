@@ -15,7 +15,7 @@ bool is_enabled() {
   return !c10::impl::tls_is_dispatch_key_excluded(DispatchKey::AutocastCUDA);
 }
 
-void set_enabled(bool new_enabled, bool bfloat) {
+void set_enabled(bool new_enabled) {
   c10::impl::tls_set_dispatch_key_excluded(DispatchKey::AutocastCUDA, !new_enabled);
 }
 
