@@ -58,6 +58,37 @@ for epoch in range(600):
 	if epoch%200==0:
 		print(l)
 		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
+
+model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
+model = model.train().cuda().half()
+print("FP16 convergence:")
+optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
+loss=torch.nn.CrossEntropyLoss()
+torch.manual_seed(0)
+time_sum=0
+
+for epoch in range(600):
+	since=time.time()
+	optimizer.zero_grad()
+	indys=torch.randint(len(data), (32,))
+	batch=data[indys].cuda().half()
+	label = labels[indys].cuda()
+	output = model(batch)
+	if isinstance(output, tuple):
+		output = output[0]
+	l=loss(output, label)
+	
+	l.backward()
+	optimizer.step()
+	time_sum+=time.time()-since
+	if epoch%200==0:
+		print(l)
+		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
+
+
+print("#"*25)
+print('AMP:')
+
 model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
 model = model.train().cuda()
 print("AMP Bfloat16 convergence(turned on through init):")
@@ -71,8 +102,9 @@ for epoch in range(600):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
+	label = labels[indys].cuda()
 	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16):
-		label = labels[indys].cuda()
+		
 		output = model(batch)
 		if isinstance(output, tuple):
 			output = output[0]
@@ -100,8 +132,40 @@ for epoch in range(600):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
+	label = labels[indys].cuda()
 	with torch.autocast(enabled=True):
-		label = labels[indys].cuda()
+		
+		output = model(batch)
+		if isinstance(output, tuple):
+			output = output[0]
+		l=loss(output, label)
+
+		scaler.scale(l).backward()
+		scaler.step(optimizer)
+		optimizer.zero_grad()
+		scaler.update()
+		time_sum+=time.time()-since
+		if epoch%200==0:
+			print(l)
+			print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
+
+
+model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
+model = model.train().cpu()
+print("AMP bfloat16 cpu convergence:")
+optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
+loss=torch.nn.CrossEntropyLoss()
+torch.manual_seed(0)
+scaler = torch.cuda.amp.GradScaler(enabled=True)
+time_sum=0
+for epoch in range(600):
+	since=time.time()
+	optimizer.zero_grad()
+	indys=torch.randint(len(data), (32,))
+	batch=data[indys].cpu()
+	label = labels[indys].cpu()
+	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16, device='cpu'):
+		
 		output = model(batch)
 		if isinstance(output, tuple):
 			output = output[0]
@@ -124,31 +188,3 @@ for epoch in range(600):
 
 
 
-
-
-
-model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
-model = model.train().cuda().half()
-print("FP16 convergence:")
-optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
-loss=torch.nn.CrossEntropyLoss()
-torch.manual_seed(0)
-time_sum=0
-
-for epoch in range(600):
-	since=time.time()
-	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
-	batch=data[indys].cuda().half()
-	label = labels[indys].cuda()
-	output = model(batch)
-	if isinstance(output, tuple):
-		output = output[0]
-	l=loss(output, label)
-	
-	l.backward()
-	optimizer.step()
-	time_sum+=time.time()-since
-	if epoch%200==0:
-		print(l)
-		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
