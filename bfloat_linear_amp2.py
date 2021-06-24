@@ -173,7 +173,6 @@ for epoch in range(600):
 		l.backward()
 		optimizer.step()
 		optimizer.zero_grad()
-		scaler.update()
 		time_sum+=time.time()-since
 		if epoch%200==0:
 			print(l)
