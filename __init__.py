@@ -824,9 +824,9 @@ class autocast(object):
     def __enter__(self):
         if self.device=='cpu':
             self.prev = torch.is_autocast_cpu_enabled()
-            self.prev_dtype = torch.get_autocast_cpu_dtype()
+            self.prev_fastdtype = torch.get_autocast_cpu_dtype()
             torch.set_autocast_cpu_enabled(self._enabled)
-            torch.set_autocast_cpu_dtype(self._dtype)
+            torch.set_autocast_cpu_dtype(self.fast_dtype)
             torch.autocast_increment_nesting()
         else:
             self.prev = torch.is_autocast_enabled()
@@ -841,7 +841,7 @@ class autocast(object):
             if torch.autocast_decrement_nesting() == 0:
                 torch.clear_autocast_cache()
             torch.set_autocast_cpu_enabled(self.prev)
-            torch.set_autocast_cpu_dtype(self.prev_dtype)
+            torch.set_autocast_cpu_dtype(self.prev_fastdtype)
         else:
             if torch.autocast_decrement_nesting() == 0:
                 torch.clear_autocast_cache()
