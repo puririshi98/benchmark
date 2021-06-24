@@ -98,7 +98,7 @@ class autocast(object):
             self._enabled = False
         else:
             self._enabled = enabled
-        self.fast_dtype=torch.float16
+        self.fast_dtype=fast_dtype
 
     def __enter__(self):
         self.prev = torch.is_autocast_enabled()
