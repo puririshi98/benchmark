@@ -156,7 +156,6 @@ print("AMP bfloat16 cpu convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
-scaler = torch.cuda.amp.GradScaler(enabled=True)
 time_sum=0
 for epoch in range(600):
 	since=time.time()
@@ -171,8 +170,8 @@ for epoch in range(600):
 			output = output[0]
 		l=loss(output, label)
 
-		scaler.scale(l).backward()
-		scaler.step(optimizer)
+		l.backward()
+		optimizer.step()
 		optimizer.zero_grad()
 		scaler.update()
 		time_sum+=time.time()-since
