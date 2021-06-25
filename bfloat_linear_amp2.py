@@ -19,10 +19,10 @@ optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
 time_sum=0
-for epoch in range(10000):
+for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
+	indys=torch.randint(len(data), (64,))
 	batch=data[indys].cuda()
 	label = labels[indys].cuda()
 	output = model(batch)
@@ -32,7 +32,7 @@ for epoch in range(10000):
 	l.backward()
 	optimizer.step()
 	time_sum+=time.time()-since
-	if epoch%2500==0:
+	if epoch%25000==0:
 		print(l)
 		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 model = torch.nn.Sequential(torch.nn.Linear(128,64),torch.nn.ReLU(),torch.nn.Linear(64,10))
@@ -42,10 +42,10 @@ optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
 time_sum=0
-for epoch in range(10000):
+for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
+	indys=torch.randint(len(data), (64,))
 	batch=data[indys].cuda().bfloat16()
 	label = labels[indys].cuda()
 	output = model(batch)
@@ -55,7 +55,7 @@ for epoch in range(10000):
 	l.backward()
 	optimizer.step()
 	time_sum+=time.time()-since
-	if epoch%2500==0:
+	if epoch%25000==0:
 		print(l)
 		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 
@@ -67,10 +67,10 @@ loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
 time_sum=0
 
-for epoch in range(10000):
+for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
+	indys=torch.randint(len(data), (64,))
 	batch=data[indys].cuda().half()
 	label = labels[indys].cuda()
 	output = model(batch)
@@ -81,7 +81,7 @@ for epoch in range(10000):
 	l.backward()
 	optimizer.step()
 	time_sum+=time.time()-since
-	if epoch%2500==0:
+	if epoch%25000==0:
 		print(l)
 		print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 
@@ -97,10 +97,10 @@ loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
 scaler = torch.cuda.amp.GradScaler(enabled=True)
 time_sum=0
-for epoch in range(10000):
+for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
+	indys=torch.randint(len(data), (64,))
 	batch=data[indys].cuda()
 	label = labels[indys].cuda()
 	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16):
@@ -115,7 +115,7 @@ for epoch in range(10000):
 		optimizer.zero_grad()
 		scaler.update()
 		time_sum+=time.time()-since
-		if epoch%2500==0:
+		if epoch%25000==0:
 			print(l)
 			print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 
@@ -127,10 +127,10 @@ loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
 scaler = torch.cuda.amp.GradScaler(enabled=True)
 time_sum=0
-for epoch in range(10000):
+for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
+	indys=torch.randint(len(data), (64,))
 	batch=data[indys].cuda()
 	label = labels[indys].cuda()
 	with torch.autocast(enabled=True):
@@ -145,7 +145,7 @@ for epoch in range(10000):
 		optimizer.zero_grad()
 		scaler.update()
 		time_sum+=time.time()-since
-		if epoch%2500==0:
+		if epoch%25000==0:
 			print(l)
 			print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 
@@ -157,10 +157,10 @@ optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
 time_sum=0
-for epoch in range(10000):
+for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (32,))
+	indys=torch.randint(len(data), (64,))
 	batch=data[indys].cpu()
 	label = labels[indys].cpu()
 	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16, device='cpu'):
@@ -174,7 +174,7 @@ for epoch in range(10000):
 		optimizer.step()
 		optimizer.zero_grad()
 		time_sum+=time.time()-since
-		if epoch%2500==0:
+		if epoch%25000==0:
 			print(l)
 			print("Time Per Iter:",round(1000.0*time_sum/(epoch+1),2),"ms")
 
