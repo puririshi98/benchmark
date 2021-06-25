@@ -17,7 +17,7 @@ print("FP32 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
-for epoch in range(600):
+for epoch in range(1000):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
@@ -26,7 +26,7 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200==0:
+	if epoch%250==0:
 		print(l)
 	l.backward()
 	optimizer.step()
@@ -36,7 +36,7 @@ print("Bfloat16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
-for epoch in range(600):
+for epoch in range(1000):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda().bfloat16()
@@ -45,7 +45,7 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200==0:
+	if epoch%250==0:
 		print(l)
 	l.backward()
 	optimizer.step()
@@ -55,7 +55,7 @@ print("FP16 convergence:")
 optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
 loss=torch.nn.CrossEntropyLoss()
 torch.manual_seed(0)
-for epoch in range(600):
+for epoch in range(1000):
 	optimizer.zero_grad()
 	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda().half()
@@ -64,7 +64,7 @@ for epoch in range(600):
 	if isinstance(output, tuple):
 		output = output[0]
 	l=loss(output, label)
-	if epoch%200==0:
+	if epoch%250==0:
 		print(l)
 	l.backward()
 	optimizer.step()
