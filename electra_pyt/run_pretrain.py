@@ -403,10 +403,10 @@ def set_seed(args):
 		torch.cuda.manual_seed_all(args.seed + get_rank())
 
 def fwd_bwd(features, scaler, model, config):
-	with torch.cuda.amp.autocast(enabled=config.amp):
-	#with torch.cuda.amp.autocast(enabled=False):
-		#total_loss, eval_fn_inputs = model.half()(features)
-		total_loss, eval_fn_inputs = model(features)
+	#with torch.cuda.amp.autocast(enabled=config.amp):
+	with torch.cuda.amp.autocast(enabled=False):
+		total_loss, eval_fn_inputs = model.bfloat16()(features)
+		#total_loss, eval_fn_inputs = model(features)
 		if config.n_gpu > 1:
 			total_loss = total_loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 		if config.gradient_accumulation_steps > 1:
@@ -693,7 +693,7 @@ def main():
 	# optimizer = AdamW(optimizer_grouped_parameters, lr=config.learning_rate)
 	# if config.amp:
 	#     model, optimizer = amp.initialize(model, optimizer, opt_level=config.amp_opt_level)
-	scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
+	scaler = torch.cuda.amp.GradScaler(enabled=False)
 
 	scheduler = get_poly_schedule_with_warmup(
 		optimizer,
