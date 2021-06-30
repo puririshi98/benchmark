@@ -22,7 +22,7 @@ time_sum=0
 for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (64,))
+	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
 	label = labels[indys].cuda()
 	output = model(batch)
@@ -45,7 +45,7 @@ time_sum=0
 for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (64,))
+	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda().bfloat16()
 	label = labels[indys].cuda()
 	output = model(batch)
@@ -70,7 +70,7 @@ time_sum=0
 for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (64,))
+	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda().half()
 	label = labels[indys].cuda()
 	output = model(batch)
@@ -100,7 +100,7 @@ time_sum=0
 for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (64,))
+	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
 	label = labels[indys].cuda()
 	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16):
@@ -130,7 +130,7 @@ time_sum=0
 for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (64,))
+	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cuda()
 	label = labels[indys].cuda()
 	with torch.autocast(enabled=True):
@@ -160,10 +160,10 @@ time_sum=0
 for epoch in range(100000):
 	since=time.time()
 	optimizer.zero_grad()
-	indys=torch.randint(len(data), (64,))
+	indys=torch.randint(len(data), (32,))
 	batch=data[indys].cpu()
 	label = labels[indys].cpu()
-	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16, device='cpu'):
+	with torch.autocast(enabled=True, fast_dtype=torch.bfloat16, device_type='cpu'):
 		
 		output = model(batch)
 		if isinstance(output, tuple):
