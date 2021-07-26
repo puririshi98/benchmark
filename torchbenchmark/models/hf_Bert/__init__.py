@@ -10,11 +10,11 @@ from ...util.model import BenchmarkModel
 from torchbenchmark.tasks import NLP
 from transformers import *
 from datasets import load_dataset
-
+import torch.cuda.nvtx as nvtx
 class Model(BenchmarkModel):
     task = NLP.LANGUAGE_MODELING
 
-    def __init__(self, device=None, jit=False):
+    def __init__(self, device=None, jit=False, precision='float32', batchsize=1):
         super().__init__()
         self.device = device
         self.jit = jit
@@ -46,14 +46,63 @@ class Model(BenchmarkModel):
             loss = outputs.loss
             loss.backward()
             self.optimizer.step()
-
-    def eval(self, niter=1):
-        if self.jit:
-            raise NotImplementedError()
+    def _step_eval(self, precision):
+        nvtx.range_push('eval')
+        if precision=='fp16':
+            output = self.model(self.eval_inputs['input_ids'].half())
+        elif precision=='bfloat16':
+            output = self.model(self.eval_inputs['input_ids'].bfloat16())
+        else:
+            output = self.model(self.eval_inputs['input_ids'])
+        nvtx.range_pop()
+    def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
+        niter = 8
+        # with torch.autograd.profiler.emit_nvtx(record_shapes=True):
         self.model.eval()
+        torch.backends.cudnn.benchmark = bench
         with torch.no_grad():
-            for _ in range(niter):
-                out = self.model(**self.eval_inputs)
+            if precision == 'fp16':
+                self.model = self.model.half()
+            elif precision == 'bfloat16':
+                self.model=self.model.bfloat16()
+            if graphs:
+                s = torch.cuda.Stream()
+                torch.cuda.synchronize()
+                with torch.cuda.stream(s):
+                    nvtx.range_push('warming up')
+                    print('warming up')
+                    for _ in range(5):
+                        self._step_eval(precision)
+                    nvtx.range_pop()
+                    torch.cuda.empty_cache()
+                    g = torch.cuda._Graph()
+                    torch.cuda.synchronize()
+                    nvtx.range_push('capturing graph')
+                    print('capturing graph')
+                    g.capture_begin()
+                    self._step_eval(precision)
+                    g.capture_end()
+                    nvtx.range_pop()
+                    torch.cuda.synchronize()
+                nvtx.range_push('replaying')
+                print('replaying')
+                since=time.time()
+                for _ in range(100):
+                    g.replay()
+                    torch.cuda.synchronize()
+                print("Average Replay Time for VT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+                nvtx.range_pop()
+            else:
+                torch.cuda.synchronize()
+                
+                for i in range(5):
+                    self._step_eval(precision)
+                    torch.cuda.synchronize()
+                since=time.time()
+                for i in range(100):
+                    self._step_eval(precision)
+                    torch.cuda.synchronize()
+                print("Average Replay Time for VT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 
 
 if __name__ == "__main__":
