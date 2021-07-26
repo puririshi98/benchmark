@@ -49,7 +49,7 @@ def _install_deps(model_path: str, verbose: bool = True) -> Tuple[bool, Any]:
 
 def _list_model_paths() -> List[str]:
     p = Path(__file__).parent.joinpath(model_dir)
-    return sorted(str(child.absolute()) for child in p.iterdir() if (child.is_dir() and ('vision' in child or 'efficient' in child) and 'timm' in child))
+    return sorted(str(child.absolute()) for child in p.iterdir())
 
 
 def setup(verbose: bool = True, continue_on_fail: bool = False) -> bool:
