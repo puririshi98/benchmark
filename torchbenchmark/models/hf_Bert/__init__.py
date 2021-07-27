@@ -48,12 +48,7 @@ class Model(BenchmarkModel):
             self.optimizer.step()
     def _step_eval(self, precision):
         nvtx.range_push('eval')
-        if precision=='fp16':
-            output = self.model(self.eval_inputs['input_ids'].half())
-        elif precision=='bfloat16':
-            output = self.model(self.eval_inputs['input_ids'].bfloat16())
-        else:
-            output = self.model(self.eval_inputs['input_ids'])
+        output = self.model(self.eval_inputs['input_ids'])
         nvtx.range_pop()
     def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
         niter = 8
