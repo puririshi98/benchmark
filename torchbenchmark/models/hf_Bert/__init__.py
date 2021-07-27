@@ -11,6 +11,7 @@ from torchbenchmark.tasks import NLP
 from transformers import *
 from datasets import load_dataset
 import torch.cuda.nvtx as nvtx
+import time
 class Model(BenchmarkModel):
     task = NLP.LANGUAGE_MODELING
 
