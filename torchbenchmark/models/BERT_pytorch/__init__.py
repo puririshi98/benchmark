@@ -61,7 +61,7 @@ class Model(BenchmarkModel):
     def get_module(self):
         return self.trainer.model, self.example_inputs
 
-    def eval(self, niter=1):
+    def _step_eval(self, niter=1):
         trainer = self.trainer
         for _ in range(niter):
             # 1. forward the next_sentence_prediction and masked_lm model
@@ -73,6 +73,54 @@ class Model(BenchmarkModel):
             next_loss = trainer.criterion(next_sent_output, self.is_next)
             mask_loss = trainer.criterion(mask_lm_output.transpose(1, 2), self.bert_label)
             loss = next_loss + mask_loss
+    def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
+        niter = 8
+        # with torch.autograd.profiler.emit_nvtx(record_shapes=True):
+        self.model.eval()
+        torch.backends.cudnn.benchmark = bench
+        with torch.no_grad():
+            if precision == 'fp16':
+                self.model = self.model.half()
+            elif precision == 'bfloat16':
+                self.model=self.model.bfloat16()
+            if graphs:
+                s = torch.cuda.Stream()
+                torch.cuda.synchronize()
+                with torch.cuda.stream(s):
+                    nvtx.range_push('warming up')
+                    print('warming up')
+                    for _ in range(5):
+                        self._step_eval(precision)
+                    nvtx.range_pop()
+                    torch.cuda.empty_cache()
+                    g = torch.cuda._Graph()
+                    torch.cuda.synchronize()
+                    nvtx.range_push('capturing graph')
+                    print('capturing graph')
+                    g.capture_begin()
+                    self._step_eval(precision)
+                    g.capture_end()
+                    nvtx.range_pop()
+                    torch.cuda.synchronize()
+                nvtx.range_push('replaying')
+                print('replaying')
+                since=time.time()
+                for _ in range(100):
+                    g.replay()
+                    torch.cuda.synchronize()
+                print("Average Replay Time for BERT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+                nvtx.range_pop()
+            else:
+                torch.cuda.synchronize()
+                
+                for i in range(5):
+                    self._step_eval(precision)
+                    torch.cuda.synchronize()
+                since=time.time()
+                for i in range(100):
+                    self._step_eval(precision)
+                    torch.cuda.synchronize()
+                print("Average Replay Time for BERT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 
     def train(self, niter=1):
         trainer = self.trainer
