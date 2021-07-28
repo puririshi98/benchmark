@@ -86,7 +86,7 @@ class Model(BenchmarkModel):
                 for _ in range(100):
                     g.replay()
                     torch.cuda.synchronize()
-                print("Average Replay Time for VT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+                print("Average Replay Time for bert:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
                 nvtx.range_pop()
             else:
                 torch.cuda.synchronize()
@@ -98,7 +98,7 @@ class Model(BenchmarkModel):
                 for i in range(100):
                     self._step_eval(precision)
                     torch.cuda.synchronize()
-                print("Average Replay Time for VT:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
+                print("Average Replay Time for bert:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 
 
 if __name__ == "__main__":
