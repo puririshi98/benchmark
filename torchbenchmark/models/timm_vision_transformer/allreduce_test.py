@@ -9,10 +9,14 @@ parser.add_argument("--local_rank",type=int)
 args = parser.parse_args()
 device='cuda'
 precision='float32'
-models = [timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda().float(), timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float()]
+model_names = ['vit_small_patch16_224', 'mixnet_m']
+models = [timm.create_model(name, pretrained=False, scriptable=True).cuda().float() for name in model_names]
 dist.init_process_group("nccl", rank=args.local_rank, world_size=world)
-for model in models:	
+for model, name in zip(models,model_names):	
 	shapes = [param.size() for param in model.parameters()]
+	sizes = [param.numel() for param in model.parameters()]
+	print("Param Shapes for",name+":",shapes)
+	print("Param Sizes for",name+":",sizes)
 	world=4
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
