@@ -25,5 +25,6 @@ for model, name in zip(models,model_names):
 		torch.distributed.all_reduce_coalesced(tensors)
 		for i, t in enumerate(tensors):
 			assert torch.equal(t, torch.full_like(t, world * (i + (world + 1.) / 2.)))
-print("Passed test!")
+if args.local_rank == 0:
+	print("Passed test!")
 
