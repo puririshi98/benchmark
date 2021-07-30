@@ -16,13 +16,14 @@ torch.distributed.init_process_group("nccl", rank=args.local_rank, world_size=wo
 for model, name in zip(models,model_names):	
 	shapes = [param.size() for param in model.parameters()]
 	sizes = [param.numel() for param in model.parameters()]
-	print("Param Shapes for",name+":",shapes)
-	print("Param Sizes for",name+":",sizes)
+	if args.local_rank == 0:
+		print("Param Shapes for",name+":",shapes)
+		print("Param Sizes for",name+":",sizes)
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
 		torch.distributed.all_reduce_coalesced(tensors)
 		for i, t in enumerate(tensors):
 			assert torch.equal(t, torch.full_like(t, world * (i + (world + 1.) / 2.)))
-
+print("Passed test!")
 
