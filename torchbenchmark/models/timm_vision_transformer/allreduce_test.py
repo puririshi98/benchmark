@@ -11,7 +11,7 @@ device='cuda'
 precision='float32'
 model_names = ['vit_small_patch16_224', 'mixnet_m']
 models = [timm.create_model(name, pretrained=False, scriptable=True).cuda().float() for name in model_names]
-dist.init_process_group("nccl", rank=args.local_rank, world_size=world)
+torch.distributed.init_process_group("nccl", rank=args.local_rank, world_size=world)
 for model, name in zip(models,model_names):	
 	shapes = [param.size() for param in model.parameters()]
 	sizes = [param.numel() for param in model.parameters()]
