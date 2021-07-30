@@ -10,6 +10,7 @@ args = parser.parse_args()
 device='cuda'
 precision='float32'
 model_names = ['vit_small_patch16_224', 'mixnet_m']
+world=4
 models = [timm.create_model(name, pretrained=False, scriptable=True).cuda().float() for name in model_names]
 torch.distributed.init_process_group("nccl", rank=args.local_rank, world_size=world)
 for model, name in zip(models,model_names):	
@@ -17,7 +18,6 @@ for model, name in zip(models,model_names):
 	sizes = [param.numel() for param in model.parameters()]
 	print("Param Shapes for",name+":",shapes)
 	print("Param Sizes for",name+":",sizes)
-	world=4
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
