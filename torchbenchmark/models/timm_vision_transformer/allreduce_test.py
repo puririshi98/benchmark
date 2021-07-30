@@ -13,7 +13,7 @@ parser.add_argument("--local_rank",type=int)
 args = parser.parse_args()
 device='cuda'
 precision='float32'
-models = [timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda().float(),model = timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float()]
+models = [timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True).cuda().float(), timm.create_model('mixnet_m', pretrained=False, scriptable=True).cuda().float()]
 dist.init_process_group("nccl", rank=args.local_rank, world_size=world)
 for model in models:	
 	shapes = [param.size() for param in model.parameters()]
