@@ -3,10 +3,6 @@ import torch
 import timm.models.vision_transformer
 import timm.models.efficientnet
 import time
-from ...util.model import BenchmarkModel
-from torchbenchmark.tasks import COMPUTER_VISION
-from .config import TimmConfig
-import torch.cuda.nvtx as nvtx
 import argparse
 parser = argparse.ArgumentParser(__doc__)
 parser.add_argument("--local_rank",type=int)
