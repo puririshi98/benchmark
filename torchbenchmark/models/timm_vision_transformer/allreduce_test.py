@@ -46,7 +46,7 @@ with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 				torch.distributed.all_reduce_coalesced(tensors)
 			nvtx.range_pop()
 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-			nvtx.range_push("Coalesce:" + str(torch.prod(shape)))
+			nvtx.range_push("Coalesce:" + str(torch.prod(torch.tensor(shape))))
 			torch.distributed.all_reduce_coalesced(tensors)
 			nvtx.range_pop()
 			nvtx.range_push("Warmup!")
@@ -55,7 +55,7 @@ with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 				torch.distributed.all_reduce(torch.cat(tensors))
 			nvtx.range_pop()
 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-			nvtx.range_push("Flat All Reduce Size:" + str(torch.prod(shape)))
+			nvtx.range_push("Flat All Reduce Size:" + str(torch.prod(torch.tensor(shape))))
 			torch.distributed.all_reduce(torch.cat(tensors))
 			nvtx.range_pop()
 		nvtx.range_pop()
