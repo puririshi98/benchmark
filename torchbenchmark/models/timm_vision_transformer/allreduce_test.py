@@ -55,11 +55,11 @@ with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 			for i in range(3):
 				tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
 				nvtx.range_push("Warmup!")
-				torch.distributed.all_reduce([torch.cat(tensors)])
+				torch.distributed.all_reduce(torch.cat(tensors))
 				nvtx.range_pop()
 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
 			nvtx.range_push("Flat All Reduce")
-			torch.distributed.all_reduce([torch.cat(tensors)])
+			torch.distributed.all_reduce(torch.cat(tensors))
 			nvtx.range_pop()
 		nvtx.range_pop()
 torch.cuda.cudart().cudaProfilerStop()
