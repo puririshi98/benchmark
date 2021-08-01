@@ -42,12 +42,12 @@ for model, name in zip(models, model_names):
 		print("Param Sizes for",name+":",sizes)
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
-		nvtx.range_push("Coalesce")
 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
+		nvtx.range_push("Coalesce")
 		torch.distributed.all_reduce_coalesced(tensors)
 		nvtx.range_pop()
-		nvtx.range_push("Flat All Reduce")
 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
+		nvtx.range_push("Flat All Reduce")
 		torch.distributed.all_reduce([torch.cat(tensors)])
 		nvtx.range_pop()
 	nvtx.range_pop()
