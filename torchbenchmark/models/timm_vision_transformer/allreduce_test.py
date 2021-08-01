@@ -38,9 +38,6 @@ with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 		nvtx.range_push("Profiling Model: " + str(name))
 		shapes = [param.size() for param in model.parameters()]
 		sizes = [param.numel() for param in model.parameters()]
-		if args.local_rank == 0:
-			print("Param Shapes for",name+":",shapes)
-			print("Param Sizes for",name+":",sizes)
 		device = torch.device("cuda:%d" % args.local_rank)
 		for shape in shapes:
 			for i in range(3):
