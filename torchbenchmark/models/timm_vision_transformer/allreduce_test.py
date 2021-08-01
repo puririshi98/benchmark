@@ -40,22 +40,22 @@ with torch.autograd.profiler.emit_nvtx(record_shapes=True):
 		sizes = [param.numel() for param in model.parameters()]
 		device = torch.device("cuda:%d" % args.local_rank)
 		for shape in shapes:
+			nvtx.range_push("Warmup!")
 			for i in range(3):
 				tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-				nvtx.range_push("Warmup!")
 				torch.distributed.all_reduce_coalesced(tensors)
-				nvtx.range_pop()
+			nvtx.range_pop()
 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-			nvtx.range_push("Coalesce")
+			nvtx.range_push("Coalesce:" + str(np.prod(shape)))
 			torch.distributed.all_reduce_coalesced(tensors)
 			nvtx.range_pop()
+			nvtx.range_push("Warmup!")
 			for i in range(3):
 				tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-				nvtx.range_push("Warmup!")
 				torch.distributed.all_reduce(torch.cat(tensors))
-				nvtx.range_pop()
+			nvtx.range_pop()
 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-			nvtx.range_push("Flat All Reduce")
+			nvtx.range_push("Flat All Reduce Size:" + str(np.prod(shape)))
 			torch.distributed.all_reduce(torch.cat(tensors))
 			nvtx.range_pop()
 		nvtx.range_pop()
