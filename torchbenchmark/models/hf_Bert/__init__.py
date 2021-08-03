@@ -8,7 +8,7 @@ import torch.optim as optim
 import torchvision.models as models
 from ...util.model import BenchmarkModel
 from torchbenchmark.tasks import NLP
-from transformers import *
+from modeling import *
 from datasets import load_dataset
 import torch.cuda.nvtx as nvtx
 import time
@@ -21,8 +21,11 @@ class Model(BenchmarkModel):
         self.jit = jit
 
         torch.manual_seed(42)
-        config = BertConfig()
-        self.model = AutoModelForMaskedLM.from_config(config).to(device)
+        config = BertConfig(512)
+        self.model = BertModel(config).to(device)
+        if jit:
+            self.model = torch.jit.script(self.model)
+            assert isinstance(self.model, torch.jit.ScriptModule)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
         input_ids = torch.randint(0, config.vocab_size, (4, 512)).to(device)
@@ -34,13 +37,9 @@ class Model(BenchmarkModel):
         self.eval_inputs = {'input_ids': eval_context, }
 
     def get_module(self):
-        if self.jit:
-            raise NotImplementedError()
         return self.model, self.eval_inputs
 
     def train(self, niter=3):
-        if self.jit:
-            raise NotImplementedError()
         self.model.train()
         for _ in range(niter):
             outputs = self.model(**self.train_inputs)
