@@ -304,33 +304,33 @@ except ImportError:
     print("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex.")
     #BertLayerNorm = BertNonFusedLayerNorm
     APEX_IS_AVAILABLE = False
-class BertLayerNorm(Module):
-    def __init__(self, hidden_size, eps=1e-12):
-        super(BertLayerNorm, self).__init__()
-        self.shape = torch.Size((hidden_size,))
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(hidden_size))
-        self.bias = nn.Parameter(torch.zeros(hidden_size))
-        self.apex_enabled = APEX_IS_AVAILABLE
+# class BertLayerNorm(Module):
+#     def __init__(self, hidden_size, eps=1e-12):
+#         super(BertLayerNorm, self).__init__()
+#         self.shape = torch.Size((hidden_size,))
+#         self.eps = eps
+#         self.weight = nn.Parameter(torch.ones(hidden_size))
+#         self.bias = nn.Parameter(torch.zeros(hidden_size))
+#         self.apex_enabled = APEX_IS_AVAILABLE
 
-    @torch.jit.unused
-    def fused_layer_norm(self, x):
-        return FusedLayerNormAffineFunction.apply(
-                    x, self.weight, self.bias, self.shape, self.eps)
+#     @torch.jit.unused
+#     def fused_layer_norm(self, x):
+#         return FusedLayerNormAffineFunction.apply(
+#                     x, self.weight, self.bias, self.shape, self.eps)
 
 
-    def forward(self, x):
-        if self.apex_enabled and not torch.jit.is_scripting():
-            x = self.fused_layer_norm(x)
-        else:
-            u = x.mean(-1, keepdim=True)
-            s = (x - u)
-            s = s * s
-            s = s.mean(-1, keepdim=True)
-            x = (x - u) / torch.sqrt(s + self.eps)
-            x = self.weight * x + self.bias
-        return x
-
+#     def forward(self, x):
+#         if self.apex_enabled and not torch.jit.is_scripting():
+#             x = self.fused_layer_norm(x)
+#         else:
+#             u = x.mean(-1, keepdim=True)
+#             s = (x - u)
+#             s = s * s
+#             s = s.mean(-1, keepdim=True)
+#             x = (x - u) / torch.sqrt(s + self.eps)
+#             x = self.weight * x + self.bias
+#         return x
+BertLayerNorm = nn.LayerNorm
 class BertEmbeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings.
     """
