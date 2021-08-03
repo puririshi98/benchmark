@@ -21,34 +21,21 @@ class Model(BenchmarkModel):
         self.jit = jit
 
         torch.manual_seed(42)
-        config = BertConfig(512)
+        config = BertConfig(vocab_size_or_config_json_file=32000)
         self.model = BertModel(config).to(device)
         if jit:
             self.model = torch.jit.script(self.model)
             assert isinstance(self.model, torch.jit.ScriptModule)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-
-        input_ids = torch.randint(0, config.vocab_size, (4, 512)).to(device)
-        decoder_ids = torch.randint(0, config.vocab_size, (4, 512)).to(device)
-
         eval_context = torch.randint(0, config.vocab_size, (batchsize, 512)).to(device)
 
-        self.train_inputs = {'input_ids': input_ids, 'labels': decoder_ids}
-        self.eval_inputs = {'input_ids': eval_context, }
+        self.eval_inputs = {'input_ids': torch.randint(0, config.vocab_size, (batchsize, 512)).to(device), 'mask':  torch.randint(0, config.vocab_size, (batchsize, 512)).to(device), 'token_type_ids':torch.randint(0, config.vocab_size, (batchsize, 512)).to(device) }
 
     def get_module(self):
         return self.model, self.eval_inputs
 
-    def train(self, niter=3):
-        self.model.train()
-        for _ in range(niter):
-            outputs = self.model(**self.train_inputs)
-            loss = outputs.loss
-            loss.backward()
-            self.optimizer.step()
     def _step_eval(self, precision):
         nvtx.range_push('eval')
-        output = self.model(self.eval_inputs['input_ids'])
+        output = self.model(self.eval_inputs['input_ids'], self.eval_inputs['mask'], self.eval_inputs['token_type_ids'])
         nvtx.range_pop()
     def eval(self, niter=1, precision='fp16', graphs=False, bench=False):
         niter = 8
@@ -99,22 +86,4 @@ class Model(BenchmarkModel):
                     torch.cuda.synchronize()
                 print("Average Replay Time for bert:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
 
-
-if __name__ == "__main__":
-    import time
-    m = Model(device="cuda")
-    module, example_inputs = m.get_module()
-
-    m.train(niter=1)
-    torch.cuda.synchronize()
-
-    begin = time.time()
-    m.train(niter=1)
-    torch.cuda.synchronize()
-    print(time.time()-begin)
-
-    begin = time.time()
-    m.eval(niter=1)
-    torch.cuda.synchronize()
-    print(time.time()-begin)
     
