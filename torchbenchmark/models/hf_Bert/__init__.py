@@ -8,7 +8,7 @@ import torch.optim as optim
 import torchvision.models as models
 from ...util.model import BenchmarkModel
 from torchbenchmark.tasks import NLP
-from modeling import *
+from .modeling import *
 from datasets import load_dataset
 import torch.cuda.nvtx as nvtx
 import time
