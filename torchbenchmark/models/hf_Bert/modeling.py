@@ -32,9 +32,8 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
 from torch.utils import checkpoint
+cached_path = lambda x: x
 
-sys.path.append('/workspace/bert/')
-from file_utils import cached_path
 
 from torch.nn import Module
 from torch.nn.parameter import Parameter
