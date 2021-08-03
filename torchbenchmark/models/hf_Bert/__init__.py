@@ -28,7 +28,7 @@ class Model(BenchmarkModel):
         input_ids = torch.randint(0, config.vocab_size, (4, 512)).to(device)
         decoder_ids = torch.randint(0, config.vocab_size, (4, 512)).to(device)
 
-        eval_context = torch.randint(0, config.vocab_size, (1, 512)).to(device)
+        eval_context = torch.randint(0, config.vocab_size, (batchsize, 512)).to(device)
 
         self.train_inputs = {'input_ids': input_ids, 'labels': decoder_ids}
         self.eval_inputs = {'input_ids': eval_context, }
