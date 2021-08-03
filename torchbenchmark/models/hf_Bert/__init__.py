@@ -26,9 +26,7 @@ class Model(BenchmarkModel):
         if jit:
             self.model = torch.jit.script(self.model)
             assert isinstance(self.model, torch.jit.ScriptModule)
-        eval_context = torch.randint(0, config.vocab_size, (batchsize, 512)).to(device)
-
-        self.eval_inputs = {'input_ids': torch.randint(0, config.vocab_size, (batchsize, 512)).to(device), 'mask':  torch.randint(0, config.vocab_size, (batchsize, 512)).to(device), 'token_type_ids':torch.randint(0, config.vocab_size, (batchsize, 512)).to(device) }
+        self.eval_inputs = {'input_ids': torch.randint(0, config.vocab_size, (batchsize, 512)).to(device), 'mask':  torch.randint(0, 2, (batchsize, 512)).to(device), 'token_type_ids':torch.randint(0, 2, (batchsize, 512)).to(device) }
 
     def get_module(self):
         return self.model, self.eval_inputs
