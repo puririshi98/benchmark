@@ -17,10 +17,9 @@ models = [timm.create_model(name, pretrained=False, scriptable=True).cuda().floa
 torch.distributed.init_process_group("nccl", rank=args.local_rank, world_size=world)
 for model, name in zip(models,model_names):	
 	shapes = [param.size() for param in model.parameters()]
-	sizes = [param.numel() for param in model.parameters()]
 	if args.local_rank == 0:
-		print("Param Shapes for",name+":",shapes)
-		print("Param Sizes for",name+":",sizes)
+		for i, param in model.parameters():
+			print(i + "," + param.numel()  + ',' + str(param.dtype).split('.')[-1])
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
