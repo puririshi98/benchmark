@@ -30,70 +30,68 @@ for model, name in zip(models,model_names):
 if args.local_rank == 0:
 	print("Passed Correctness test!")
 
-# if args.local_rank == 0:
-# 	print("Running per param perf test...")
-# torch.cuda.cudart().cudaProfilerStart()
-# for model, name in zip(models, model_names):	
-# 	nvtx.range_push("Profiling Model: " + str(name))
-# 	shapes = [param.size() for param in model.parameters()]
-# 	sizes = [param.numel() for param in model.parameters()]
-# 	device = torch.device("cuda:%d" % args.local_rank)
-# 	for shape in shapes:
-# 		nvtx.range_push("Warmup!")
-# 		for i in range(3):
-# 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-# 			torch.distributed.all_reduce_coalesced(tensors)
-# 		nvtx.range_pop()
-# 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-# 		nvtx.range_push("Coalesce:" + str(torch.prod(torch.tensor(shape))))
-# 		torch.distributed.all_reduce_coalesced(tensors)
-# 		nvtx.range_pop()
-# 		nvtx.range_push("Warmup!")
-# 		for i in range(3):
-# 			tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-# 			torch.distributed.all_reduce(torch.cat(tensors))
-# 		nvtx.range_pop()
-# 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
-# 		nvtx.range_push("Cat Size:" + str(torch.prod(torch.tensor(shape))))
-# 		cats = torch.cat(tensors)
-# 		nvtx.range_pop()
-# 		nvtx.range_push("Flat All Reduce Size:" + str(torch.prod(torch.tensor(shape))))
-# 		torch.distributed.all_reduce(cats)
-# 		nvtx.range_pop()
-# 	nvtx.range_pop()
-# torch.cuda.cudart().cudaProfilerStop()
-# if args.local_rank == 0:
-# 	print("Finished per param perf test!")
-
 if args.local_rank == 0:
-	print("Running perf test...")
+	print("Running per param perf test...")
 torch.cuda.cudart().cudaProfilerStart()
 for model, name in zip(models, model_names):	
 	nvtx.range_push("Profiling Model: " + str(name))
 	shapes = [param.size() for param in model.parameters()]
+	sizes = [param.numel() for param in model.parameters()]
 	device = torch.device("cuda:%d" % args.local_rank)
-	nvtx.range_push("Warmup!")
-	tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for shape in shapes]
-	torch.distributed.all_reduce_coalesced(tensors)
-	nvtx.range_pop()
-	torch.cuda.synchronize()
-	nvtx.range_push("Coalesce:" + str(torch.prod(torch.tensor(shape))))
-	for i in range(10):
+	for shape in shapes:
+		nvtx.range_push("Warmup!")
+		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
 		torch.distributed.all_reduce_coalesced(tensors)
+		nvtx.range_pop()
+		torch.cuda.synchronize()
+		nvtx.range_push("Coalesce:" + str(torch.prod(torch.tensor(shape))))
+		for i in range(10):
+			torch.distributed.all_reduce_coalesced(tensors)
+		nvtx.range_pop()
+		nvtx.range_push("Warmup!")
+		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
+		torch.distributed.all_reduce(torch.cat(tensors))
+		nvtx.range_pop()
+		torch.cuda.synchronize()
+		cats = torch.cat(tensors)
+		nvtx.range_push("Flat All Reduce Size:" + str(torch.prod(torch.tensor(shape))))
+		for i in range(10):
+			torch.distributed.all_reduce(cats)
+		nvtx.range_pop()
 	nvtx.range_pop()
-	
-	tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float).reshape(-1) for shape in shapes]
-	cats = torch.cat(tensors)
-	nvtx.range_push("Warmup!")
-	torch.distributed.all_reduce(cats)
-	nvtx.range_pop()
-	torch.cuda.synchronize()
-	nvtx.range_push("Flat All Reduce Size:" + str(torch.prod(torch.tensor(shape))))
-	for i in range(10):
-		torch.distributed.all_reduce(cats)
-	nvtx.range_pop()
-
-	nvtx.range_pop() #Model name range
 torch.cuda.cudart().cudaProfilerStop()
 if args.local_rank == 0:
-	print("Finished perf test!")
+	print("Finished per param perf test!")
+
+# if args.local_rank == 0:
+# 	print("Running perf test...")
+# torch.cuda.cudart().cudaProfilerStart()
+# for model, name in zip(models, model_names):	
+# 	nvtx.range_push("Profiling Model: " + str(name))
+# 	shapes = [param.size() for param in model.parameters()]
+# 	device = torch.device("cuda:%d" % args.local_rank)
+# 	nvtx.range_push("Warmup!")
+# 	tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for shape in shapes]
+# 	torch.distributed.all_reduce_coalesced(tensors)
+# 	nvtx.range_pop()
+# 	torch.cuda.synchronize()
+# 	nvtx.range_push("Coalesce:" + str(torch.prod(torch.tensor(shape))))
+# 	for i in range(10):
+# 		torch.distributed.all_reduce_coalesced(tensors)
+# 	nvtx.range_pop()
+	
+# 	tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float).reshape(-1) for shape in shapes]
+# 	cats = torch.cat(tensors)
+# 	nvtx.range_push("Warmup!")
+# 	torch.distributed.all_reduce(cats)
+# 	nvtx.range_pop()
+# 	torch.cuda.synchronize()
+# 	nvtx.range_push("Flat All Reduce Size:" + str(torch.prod(torch.tensor(shape))))
+# 	for i in range(10):
+# 		torch.distributed.all_reduce(cats)
+# 	nvtx.range_pop()
+
+# 	nvtx.range_pop() #Model name range
+# torch.cuda.cudart().cudaProfilerStop()
+# if args.local_rank == 0:
+# 	print("Finished perf test!")
