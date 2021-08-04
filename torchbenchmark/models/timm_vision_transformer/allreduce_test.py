@@ -18,7 +18,8 @@ torch.distributed.init_process_group("nccl", rank=args.local_rank, world_size=wo
 for model, name in zip(models,model_names):	
 	shapes = [param.size() for param in model.parameters()]
 	if args.local_rank == 0:
-		for i, param in model.parameters():
+		print("Param Shapes for", name)
+		for i, param in enumerate(model.parameters()):
 			print(i + "," + param.numel()  + ',' + str(param.dtype).split('.')[-1])
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
