@@ -20,7 +20,7 @@ for model, name in zip(models,model_names):
 	if args.local_rank == 0:
 		print("Param Shapes for", name)
 		for i, param in enumerate(model.parameters()):
-			print(i + "," + str(param.numel())  + ',' + str(param.dtype).split('.')[-1])
+			print(str(i) + "," + str(param.numel())  + ',' + str(param.dtype).split('.')[-1])
 	device = torch.device("cuda:%d" % args.local_rank)
 	for shape in shapes:
 		tensors = [torch.full(shape, args.local_rank + 1 + i, device=device, dtype=torch.float) for i in range(5)]
