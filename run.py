@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("-cudnnbenchmark", action="store_true",  help="turn cudnn benchmark on")
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     parser.add_argument("-batchsize", default=1, type=int,help="Increase batchsize from the default of 1, (only works for visiontransformer rn)")
+    parser.add_argument("-large", action="store_true", help="to use with BERT to switch to BERT large from base")
     args = parser.parse_args()
     print(args)
     torch.cuda.cudart().cudaProfilerStart()
@@ -59,10 +60,13 @@ if __name__ == "__main__":
     if args.mode == 'jit':
         set_fuser(args.fuser)
     # build the model and get the chosen test method
-    if args.batchsize!=1:
-        m = Model(args.device, jit=(args.mode=="jit"), batchsize=int(args.batchsize))
+    if args.model.lower() == 'hf_bert':
+        m = Model(args.device, jit=(args.mode=="jit"), batchsize=int(args.batchsize), large=args.large)
     else:
-        m = Model(args.device, jit=(args.mode=="jit"))
+        if args.batchsize!=1:
+            m = Model(args.device, jit=(args.mode=="jit"), batchsize=int(args.batchsize))
+        else:
+            m = Model(args.device, jit=(args.mode=="jit"))
     test = getattr(m, args.test)
 
     run_one_step(test, precision=args.precision, graphs=args.graphs, bench=args.cudnnbenchmark)
