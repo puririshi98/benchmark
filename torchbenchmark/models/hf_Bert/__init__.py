@@ -27,7 +27,8 @@ class Model(BenchmarkModel):
             num_attention_heads=16 if large else 12,
             num_hidden_layers=24 if large else 12
         )
-        self.model = BertModel(config).to(device)
+        #self.model = BertModel(config).to(device)
+        self.model = BertForQuestionAnswering(config).to(device)
         if jit:
             self.model = torch.jit.script(self.model)
             assert isinstance(self.model, torch.jit.ScriptModule)
