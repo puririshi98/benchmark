@@ -43,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument("--profile", action="store_true", help="Run the profiler around the function")
     parser.add_argument("-batchsize", default=1, type=int,help="Increase batchsize from the default of 1, (only works for visiontransformer rn)")
     parser.add_argument("-large", action="store_true", help="to use with BERT to switch to BERT large from base")
+    parser.add_argument("-seqlen", default=128, type=int, help="seqlen for Language models")
     args = parser.parse_args()
     print(args)
     torch.cuda.cudart().cudaProfilerStart()
@@ -61,7 +62,7 @@ if __name__ == "__main__":
         set_fuser(args.fuser)
     # build the model and get the chosen test method
     if args.model.lower() == 'hf_bert':
-        m = Model(args.device, jit=(args.mode=="jit"), batchsize=int(args.batchsize), large=args.large)
+        m = Model(args.device, jit=(args.mode=="jit"), batchsize=int(args.batchsize), seqlen=args.seqlen, large=args.large)
     else:
         if args.batchsize!=1:
             m = Model(args.device, jit=(args.mode=="jit"), batchsize=int(args.batchsize))
