@@ -15,18 +15,27 @@ import time
 class Model(BenchmarkModel):
     task = NLP.LANGUAGE_MODELING
 
-    def __init__(self, device=None, jit=False, precision='float32', batchsize=1):
+    def __init__(self, device=None, jit=False, precision='float32', batchsize=1, seqlen=128, large=False):
         super().__init__()
         self.device = device
         self.jit = jit
 
         torch.manual_seed(42)
-        config = BertConfig(vocab_size_or_config_json_file=32000)
+        config = BertConfig(vocab_size_or_config_json_file=30522,
+            max_position_embeddings=512, hidden_size=1024 if large else 768,
+            intermediate_size=4096 if large else 3072,
+            num_attention_heads=16 if large else 12,
+            num_hidden_layers=24 if large else 12
+        )
         self.model = BertModel(config).to(device)
         if jit:
             self.model = torch.jit.script(self.model)
             assert isinstance(self.model, torch.jit.ScriptModule)
-        self.eval_inputs = {'input_ids': torch.randint(0, config.vocab_size, (batchsize, 512)).to(device), 'mask':  torch.randint(0, 2, (batchsize, 512)).to(device), 'token_type_ids':torch.randint(0, 2, (batchsize, 512)).to(device) }
+        self.eval_inputs = {
+            'input_ids': torch.randint(0, config.vocab_size, (batchsize, seqlen)).to(device),
+            'mask':  torch.randint(0, 2, (batchsize, seqlen)).to(device),
+            'token_type_ids':torch.randint(0, 2, (batchsize, seqlen)).to(device)
+        }
 
     def get_module(self):
         return self.model, self.eval_inputs
