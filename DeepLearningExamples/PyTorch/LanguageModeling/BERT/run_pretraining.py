@@ -64,6 +64,8 @@ skipped_steps = 0
 # Track whether a SIGTERM (cluster time up) has been handled
 timeout_sent = False
 
+s = torch.cuda.Stream()
+
 import signal
 # handle SIGTERM sent from the scheduler and mark so we
 # can gracefully save & exit
@@ -424,7 +426,8 @@ def prepare_model_and_optimizer(args, device):
 
 	if args.local_rank != -1:
 		if not args.allreduce_post_accumulation:
-			model = DDP(model, message_size=250000000, gradient_predivide_factor=get_world_size())
+			with torch.cuda.stream(s):
+				model = DDP(model, message_size=250000000, gradient_predivide_factor=get_world_size())
 		else:
 			flat_dist_call([param.data for param in model.parameters()], torch.distributed.broadcast, (0,) )
 	elif args.n_gpu > 1:
@@ -578,7 +581,7 @@ def main():
 			
 			for f_id in range(f_start_id + 1 , len(files)):
 				
-				s = torch.cuda.Stream()
+				
 				torch.cuda.synchronize()
 				with torch.cuda.stream(s):
 					if get_world_size() > num_files:
@@ -597,7 +600,7 @@ def main():
 				
 					nvtx.range_push("warming up")
 					for step, batch in enumerate(train_iter):
-						if (args.cudagraphs and step < 5 * args.gradient_accumulation_steps) or (not args.cudagraphs):
+						if (args.cudagraphs and step < 11 * args.gradient_accumulation_steps) or (not args.cudagraphs):
 							training_steps += 1
 							batch = [t.to(device) for t in batch]
 							input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
