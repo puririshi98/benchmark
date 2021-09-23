@@ -98,7 +98,7 @@ def main():
 		models = {'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
 			'VT':timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True),
 			'Linear':gen_simple_linear_model(n_devices),
-			'hugface': BertModel(BertConfig)}
+			'hugface': BertModel(BertConfig())}
 
 
 		for model_name, model in models.items():
