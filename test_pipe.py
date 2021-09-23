@@ -32,9 +32,9 @@ class OptimizerOption:
 class TimmConfigEF:
     def _init_input(self):
         self.example_inputs = torch.randn(
-            (self.batch_size,) + self.input_size, device=self.device, dtype=self.data_dtype)
+            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
         self.infer_example_inputs = torch.randn(
-            (1,) + self.input_size, device=self.device, dtype=self.data_dtype)
+            (1,) + self.input_size, dtype=self.data_dtype)
 
     def __init__(self, model, precision):
         self.model = model
@@ -49,9 +49,9 @@ class TimmConfigEF:
 class TimmConfigVT:
     def _init_input(self):
         self.example_inputs = torch.randn(
-            (self.batch_size,) + self.input_size, device=self.device, dtype=self.data_dtype)
+            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
         self.infer_example_inputs = torch.randn(
-            (1,) + self.input_size, device=self.device, dtype=self.data_dtype)
+            (1,) + self.input_size, dtype=self.data_dtype)
 
     def __init__(self, model, precision):
         self.model = model
