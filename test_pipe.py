@@ -42,7 +42,6 @@ class TimmConfigEF:
         # Configurations
         self.batch_size = 64
         self.num_classes = self.model.num_classes
-        self.loss = nn.CrossEntropyLoss().to(self.device)
         self.target_shape = tuple()
         self.input_size = self.model.default_cfg["input_size"]
         self._init_input()
@@ -60,7 +59,6 @@ class TimmConfigVT:
         # Configurations
         self.batch_size = 64
         self.num_classes = self.model.num_classes
-        self.loss = nn.CrossEntropyLoss().to(self.device)
         self.target_shape = tuple()
         self.input_size = self.model.default_cfg["input_size"]
         self._init_input()
