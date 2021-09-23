@@ -83,7 +83,7 @@ def assign_chunks(modules, n_devices):
 			chunks = modules[start_ptr:]
 		else:
 			chunks = modules[start_ptr:(start_ptr+modules_in_each_chunk)]
-		for module_x in chunk:
+		for module_x in chunks:
 			module_x.cuda(chunk)
 		start_ptr += modules_in_each_chunk
 
