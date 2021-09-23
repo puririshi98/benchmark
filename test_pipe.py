@@ -146,8 +146,8 @@ def main():
 				print("On", n_devices, "devices")
 				print("Inference Failed for:", model_name)
 				print(e)
-			print()
-			print('#'*25)
+		print()
+		print('#'*25)
 	#report it
 	print(runtimes)
 
