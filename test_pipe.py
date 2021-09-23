@@ -141,7 +141,7 @@ def main():
 				since = time.time()
 				for i in range(100):
 					model(*infer_inputs)
-				runtimes[model_name][str(n_devices) + '_gpus'] = round((time.time()-since)/100.0, 2)
+				runtimes[model_name][str(n_devices) + '_gpus'] = str(round((time.time()-since)*10, 2)) + ' ms'
 			except Exception as e:
 				print("On", n_devices, "devices")
 				print("Inference Failed for:", model_name)
