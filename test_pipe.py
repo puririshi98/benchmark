@@ -34,7 +34,7 @@ class TimmConfigEF:
         self.example_inputs = torch.randn(
             (self.batch_size,) + self.input_size, dtype=self.data_dtype)
         self.infer_example_inputs = torch.randn(
-            (1,) + self.input_size, dtype=self.data_dtype)
+            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
 
     def __init__(self, model, precision):
         self.model = model
@@ -51,7 +51,7 @@ class TimmConfigVT:
         self.example_inputs = torch.randn(
             (self.batch_size,) + self.input_size, dtype=self.data_dtype)
         self.infer_example_inputs = torch.randn(
-            (1,) + self.input_size, dtype=self.data_dtype)
+            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
 
     def __init__(self, model, precision):
         self.model = model
@@ -110,6 +110,9 @@ def main():
 			elif model_name == 'Linear':
 				infer_inputs = (torch.randn((64,1024)).cuda(),)
 			elif model_name == 'hugface':
+				vocab_size = 30522
+				batchsize = 64
+				seqlen = 128
 				infer_inputs = (
             		torch.randint(0, config.vocab_size, (batchsize, seqlen)).cuda(),
            			torch.randint(0, 2, (batchsize, seqlen)).cuda(),
