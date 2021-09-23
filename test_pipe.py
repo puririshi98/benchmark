@@ -114,7 +114,7 @@ def main():
 				batchsize = 64
 				seqlen = 128
 				infer_inputs = (
-            		torch.randint(0, config.vocab_size, (batchsize, seqlen)).cuda(),
+            		torch.randint(0, vocab_size, (batchsize, seqlen)).cuda(),
            			torch.randint(0, 2, (batchsize, seqlen)).cuda(),
             		torch.randint(0, 2, (batchsize, seqlen)).cuda()
         		)
