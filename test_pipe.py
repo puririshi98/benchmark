@@ -92,6 +92,7 @@ def assign_chunks(modules, n_devices):
 def main():
 	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
 	for n_devices in range(1,torch.cuda.device_count()):
+		print("Testing", n_devices,"devices:")
 		#Model Inits
 		models = {'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
 			'VT':timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True),
@@ -145,6 +146,8 @@ def main():
 				print("On", n_devices, "devices")
 				print("Inference Failed for:", model_name)
 				print(e)
+			print()
+			print('#'*25)
 	#report it
 	print(runtimes)
 
