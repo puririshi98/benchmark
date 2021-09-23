@@ -124,6 +124,9 @@ def main():
 					modules = [module for module in model.modules() if not isinstance(module, nn.Sequential)]
 					assign_chunks(modules)	
 					model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False)
+				else:
+					model =  model.cuda()
+				model = model.eval()
 			except Exception as e:
 				print("On", n_devices, "devices")
 				print("Could Not Succesfully Breakup:", model_name)
