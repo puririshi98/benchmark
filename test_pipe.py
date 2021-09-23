@@ -125,7 +125,7 @@ def main():
 			try:
 				if n_devices > 1:
 					modules = [module for module in model.modules() if not isinstance(module, nn.Sequential)]
-					assign_chunks(modules)	
+					assign_chunks(modules, n_devices)	
 					model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False)
 				else:
 					model =  model.cuda()
@@ -141,7 +141,7 @@ def main():
 				for i in range(100):
 					model(*infer_inputs)
 				runtimes[model_name][str(n_devices) + '_gpus'] = round((since - time.time())/100.0, 2)
-			except:
+			except Exception as e:
 				print("On", n_devices, "devices")
 				print("Inference Failed for:", model_name)
 				print(e)
