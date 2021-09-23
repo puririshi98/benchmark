@@ -95,7 +95,7 @@ def main():
 	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
 	for n_devices in range(1,torch.cuda.device_count()):
 		#Model Inits
-		models = {'EF':timm.create_model(variant, pretrained=False, scriptable=True),
+		models = {'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
 			'VT':timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True),
 			'Linear':gen_simple_linear_model(n_devices),
 			'hugface': BertModel(BertConfig)}
