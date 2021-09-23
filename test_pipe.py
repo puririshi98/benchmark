@@ -103,12 +103,12 @@ def main():
 			#Model Setup
 			if model_name == 'EF':
 				cfg = TimmConfigEF(model=model, precision='float32')
-				infer_inputs = (cfg.infer_example_inputs.cuda())
+				infer_inputs = (cfg.infer_example_inputs.cuda(),)
 			elif model_name == 'VT':
 				cfg = TimmConfigVT(model=model, precision='float32')
-				infer_inputs = (cfg.infer_example_inputs.cuda())
+				infer_inputs = (cfg.infer_example_inputs.cuda(),)
 			elif model_name == 'Linear':
-				infer_inputs = (torch.randn((64,1024)).cuda())
+				infer_inputs = (torch.randn((64,1024)).cuda(),)
 			elif model_name == 'hugface':
 				infer_inputs = (
             		torch.randint(0, config.vocab_size, (batchsize, seqlen)).cuda(),
