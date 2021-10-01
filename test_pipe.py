@@ -9,7 +9,7 @@ import dataclasses
 import time
 import torch.distributed.pipeline
 import torch.distributed.pipeline.sync
-
+import os
 
 def resolve_precision(precision: str):
     assert precision in ('amp', 'float16', 'bfloat16', 'float32')
@@ -94,6 +94,9 @@ def assign_chunks(modules, n_devices):
 
 
 def main():
+	os.environ['MASTER_ADDR'] = 'localhost'
+	os.environ['MASTER_PORT'] = '29500'
+	torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
 	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
 	for n_devices in range(1,torch.cuda.device_count()):
 		print("Testing", n_devices,"devices:")
