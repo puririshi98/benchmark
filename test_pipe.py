@@ -9,7 +9,6 @@ import dataclasses
 import time
 import torch.distributed.pipeline
 import torch.distributed.pipeline.sync
-import torch.distributed.pipeline.sync.Pipe
 
 
 def resolve_precision(precision: str):
