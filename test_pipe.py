@@ -7,6 +7,7 @@ from transformers import BertModel, BertConfig
 import torch.nn as nn
 import dataclasses
 import time
+import torch.distributed.pipeline
 def resolve_precision(precision: str):
     assert precision in ('amp', 'float16', 'bfloat16', 'float32')
     use_amp = False
