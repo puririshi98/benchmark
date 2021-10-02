@@ -128,7 +128,7 @@ def main():
 				vocab_size = 30522
 				batchsize = 64
 				seqlen = 128
-				infer_inputs = (torch.randint(0, vocab_size, (batchsize, seqlen)).cuda(),)          
+				infer_inputs = (torch.randint(0, vocab_size, (batchsize, seqlen), dtype=torch.Long).cuda(),)          
 			else:
 				print("Model Not supported:", model_name)
 
