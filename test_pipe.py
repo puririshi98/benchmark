@@ -85,7 +85,7 @@ def assign_chunks(modules, n_devices):
 	num_modules = len(modules)
 	new_Module = torch.nn.Sequential(*modules)
 	modules = [module for module in new_Module.modules() if default_block(module)]
-	print(modules)
+	# print(modules)
 	modules_in_each_chunk = int(num_modules / n_devices)
 	start_ptr = 0
 	for chunk in range(n_devices):
