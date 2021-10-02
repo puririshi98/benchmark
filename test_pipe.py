@@ -11,6 +11,8 @@ import time
 import torch.distributed.pipeline
 import torch.distributed.pipeline.sync
 import os
+import traceback
+import sys
 
 def resolve_precision(precision: str):
 	assert precision in ('amp', 'float16', 'bfloat16', 'float32')
@@ -78,8 +80,8 @@ def gen_simple_linear_model(n_devices):
 	return torch.nn.Sequential(*layer_list)
 
 def default_block(module):
-	types = [eval(i) for i in list(dir(torch.nn)) if i!='Module' and i!='Sequential' and any(x.isupper() for x in i) and '_' not in i]
-	return isinstance(module, tuple(types))
+	types = [i for i in list(dir(torch.nn)) if i!='Module' and i!='Sequential' and i!='ModuleList' and any(x.isupper() for x in i) and '_' not in i]
+	return str(module.__class__.__name__) in types
 
 def assign_chunks(modules, n_devices):
 	num_modules = len(modules)
@@ -128,7 +130,7 @@ def main():
 				vocab_size = 30522
 				batchsize = 64
 				seqlen = 128
-				infer_inputs = (torch.randint(0, vocab_size, (batchsize, seqlen), dtype=torch.int64).cuda(),)          
+				infer_inputs = (torch.randint(0, vocab_size, (batchsize, seqlen)).cuda(),)          
 			else:
 				print("Model Not supported:", model_name)
 
@@ -141,7 +143,9 @@ def main():
 				except Exception as e:
 					print("On", n_devices, "devices")
 					print("Could Not Succesfully Breakup:", model_name)
-					print(e)
+					print(list(dir(torch.nn)))
+					traceback.print_exc(file=sys.stdout)
+					quit()
 			else:
 				model =  model.cuda()
 				# print("-*"*25)
@@ -152,14 +156,15 @@ def main():
 
 			#time it
 			try:
-				since = time.time()
-				for i in range(100):
-					model(*infer_inputs)
-				runtimes[model_name][str(n_devices) + '_gpus'] = str(round((time.time()-since)*10, 2)) + ' ms'
+				with torch.cuda.autocast():
+					since = time.time()
+					for i in range(100):
+						model(*infer_inputs)
+					runtimes[model_name][str(n_devices) + '_gpus'] = str(round((time.time()-since)*10, 2)) + ' ms'
 			except Exception as e:
 				print("On", n_devices, "devices")
 				print("Inference Failed for:", model_name)
-				print(e)
+				traceback.print_exc(file=sys.stdout)
 		print()
 		print('#'*25)
 	#report it
