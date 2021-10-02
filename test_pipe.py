@@ -72,10 +72,9 @@ def gen_simple_linear_model(n_devices):
 	hsize=512
 	for i in range(n_devices):
 
-		layer_list += [torch.nn.Linear(hsize,int(hsize/2))]
+		layer_list += [torch.nn.Linear(hsize,int(hsize))]
 		if i != n_devices-1:
 			layer_list += [torch.nn.ReLU()]
-		hsize = int(hsize/2)
 	return torch.nn.Sequential(*layer_list)
 
 def assign_chunks(modules, n_devices):
