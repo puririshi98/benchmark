@@ -68,12 +68,12 @@ class TimmConfigVT:
         self._init_input()
 
 def gen_simple_linear_model(n_devices):
-	layer_list = [torch.nn.Linear(1024,512), torch.nn.ReLU()]
-	hsize=512
-	for i in range(n_devices):
-
+	hsize=
+	layer_list = []
+	hsize=1024*8
+	for i in range(n_devices+1):
 		layer_list += [torch.nn.Linear(hsize,int(hsize))]
-		if i != n_devices-1:
+		if i != n_devices:
 			layer_list += [torch.nn.ReLU()]
 	return torch.nn.Sequential(*layer_list)
 
