@@ -96,7 +96,7 @@ def main():
 	os.environ['MASTER_PORT'] = '29500'
 	torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
 	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
-	for n_devices in range(1,torch.cuda.device_count()):
+	for n_devices in range(1,torch.cuda.device_count()+1):
 		print("Testing", n_devices,"devices:")
 		#Model Inits
 		models = {'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
