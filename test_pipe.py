@@ -13,60 +13,60 @@ import torch.distributed.pipeline.sync
 import os
 
 def resolve_precision(precision: str):
-    assert precision in ('amp', 'float16', 'bfloat16', 'float32')
-    use_amp = False
-    model_dtype = torch.float32
-    data_dtype = torch.float32
-    if precision == 'amp':
-        use_amp = True
-    elif precision == 'float16':
-        model_dtype = torch.float16
-        data_dtype = torch.float16
-    elif precision == 'bfloat16':
-        model_dtype = torch.bfloat16
-        data_dtype = torch.bfloat16
-    return use_amp, model_dtype, data_dtype
+	assert precision in ('amp', 'float16', 'bfloat16', 'float32')
+	use_amp = False
+	model_dtype = torch.float32
+	data_dtype = torch.float32
+	if precision == 'amp':
+		use_amp = True
+	elif precision == 'float16':
+		model_dtype = torch.float16
+		data_dtype = torch.float16
+	elif precision == 'bfloat16':
+		model_dtype = torch.bfloat16
+		data_dtype = torch.bfloat16
+	return use_amp, model_dtype, data_dtype
 
 @dataclasses.dataclass
 class OptimizerOption:
-    lr: float
-    opt: str
-    weight_decay: float
-    momentum: float
+	lr: float
+	opt: str
+	weight_decay: float
+	momentum: float
 
 class TimmConfigEF:
-    def _init_input(self):
-        self.example_inputs = torch.randn(
-            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
-        self.infer_example_inputs = torch.randn(
-            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
+	def _init_input(self):
+		self.example_inputs = torch.randn(
+			(self.batch_size,) + self.input_size, dtype=self.data_dtype)
+		self.infer_example_inputs = torch.randn(
+			(self.batch_size,) + self.input_size, dtype=self.data_dtype)
 
-    def __init__(self, model, precision):
-        self.model = model
-        self.use_amp, self.model_dtype, self.data_dtype = resolve_precision(precision)
-        # Configurations
-        self.batch_size = 64
-        self.num_classes = self.model.num_classes
-        self.target_shape = tuple()
-        self.input_size = self.model.default_cfg["input_size"]
-        self._init_input()
+	def __init__(self, model, precision):
+		self.model = model
+		self.use_amp, self.model_dtype, self.data_dtype = resolve_precision(precision)
+		# Configurations
+		self.batch_size = 64
+		self.num_classes = self.model.num_classes
+		self.target_shape = tuple()
+		self.input_size = self.model.default_cfg["input_size"]
+		self._init_input()
 
 class TimmConfigVT:
-    def _init_input(self):
-        self.example_inputs = torch.randn(
-            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
-        self.infer_example_inputs = torch.randn(
-            (self.batch_size,) + self.input_size, dtype=self.data_dtype)
+	def _init_input(self):
+		self.example_inputs = torch.randn(
+			(self.batch_size,) + self.input_size, dtype=self.data_dtype)
+		self.infer_example_inputs = torch.randn(
+			(self.batch_size,) + self.input_size, dtype=self.data_dtype)
 
-    def __init__(self, model, precision):
-        self.model = model
-        self.use_amp, self.model_dtype, self.data_dtype = resolve_precision(precision)
-        # Configurations
-        self.batch_size = 64
-        self.num_classes = self.model.num_classes
-        self.target_shape = tuple()
-        self.input_size = self.model.default_cfg["input_size"]
-        self._init_input()
+	def __init__(self, model, precision):
+		self.model = model
+		self.use_amp, self.model_dtype, self.data_dtype = resolve_precision(precision)
+		# Configurations
+		self.batch_size = 64
+		self.num_classes = self.model.num_classes
+		self.target_shape = tuple()
+		self.input_size = self.model.default_cfg["input_size"]
+		self._init_input()
 
 def gen_simple_linear_model(n_devices):
 	layer_list = []
@@ -130,11 +130,7 @@ def main():
 				vocab_size = 30522
 				batchsize = 64
 				seqlen = 128
-				infer_inputs = (
-            		torch.randint(0, vocab_size, (batchsize, seqlen)).cuda(),
-           			torch.randint(0, 2, (batchsize, seqlen)).cuda(),
-            		torch.randint(0, 2, (batchsize, seqlen)).cuda()
-        		)
+				infer_inputs = (torch.randint(0, vocab_size, (batchsize, seqlen)).cuda(),)          
 			else:
 				print("Model Not supported:", model_name)
 
