@@ -156,7 +156,7 @@ def main():
 
 			#time it
 			try:
-				with torch.cuda.autocast():
+				with torch.cuda.amp.autocast():
 					since = time.time()
 					for i in range(100):
 						model(*infer_inputs)
