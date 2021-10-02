@@ -78,7 +78,7 @@ def gen_simple_linear_model(n_devices):
 	return torch.nn.Sequential(*layer_list)
 
 def default_block(module):
-	types = [eval(i) for i in list(dir(torch.nn)) if i!='Module' and i!='Sequential'  and i!='MixedConv2d' and any(x.isupper() for x in i) and '_' not in i]
+	types = [eval(i) for i in list(dir(torch.nn)) if i!='Module' and i!='Sequential' and any(x.isupper() for x in i) and '_' not in i]
 	return isinstance(module, tuple(types))
 
 def assign_chunks(modules, n_devices):
