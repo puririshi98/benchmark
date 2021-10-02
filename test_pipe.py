@@ -143,6 +143,10 @@ def main():
 					print(e)
 			else:
 				model =  model.cuda()
+				print("-*"*25)
+				print(model_name)
+				print([module for module in model.modules() if not isinstance(module, nn.Sequential)])
+				print("-*"*25)
 			model = model.eval()
 
 			#time it
