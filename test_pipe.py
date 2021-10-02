@@ -79,7 +79,7 @@ def gen_simple_linear_model(n_devices):
 
 def not_custom_block(module):
 	for typeofmodule in dir(torch.nn):
-		if isinstance(module,eval(typeofmodule)):
+		if isinstance(module,eval(typeofmodule)) and not typeofmodule == 'Module':
 			return True
 	return False
 
