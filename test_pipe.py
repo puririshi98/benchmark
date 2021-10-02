@@ -77,14 +77,14 @@ def gen_simple_linear_model(n_devices):
 			layer_list += [torch.nn.ReLU()]
 	return torch.nn.Sequential(*layer_list)
 
-def not_custom_block(module):
-	types = [eval(i) for i in list(dir(torch.nn)) if i!='Module' and any(x.isupper() for x in i)]
+def default_block(module):
+	types = [eval(i) for i in list(dir(torch.nn)) if i!='Module' and i!='Sequential' and any(x.isupper() for x in i) and '_' not in i]
 	return isinstance(module, tuple(types))
 
 def assign_chunks(modules, n_devices):
 	num_modules = len(modules)
 	new_Module = torch.nn.Sequential(*modules)
-	modules = [module for module in modules if ((not isinstance(module, nn.Sequential)) and not_custom_block(module))]
+	modules = [module for module in new_Module.modules() if default_block(module)]
 	print(modules)
 	quit()
 	modules_in_each_chunk = int(num_modules / n_devices)
@@ -136,7 +136,7 @@ def main():
 			#Chunk if distributing across gpus
 			if n_devices > 1:
 				try:
-					modules = [module for module in model.modules() if ((not isinstance(module, nn.Sequential)) and not_custom_block(module))]
+					modules = [module for module in model.modules() if default_block(module)]
 					model = assign_chunks(modules, n_devices)	
 					model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False)
 				except Exception as e:
@@ -147,7 +147,7 @@ def main():
 				model =  model.cuda()
 				# print("-*"*25)
 				# print(model_name)
-				# print([module for module in model.modules() if ((not isinstance(module, nn.Sequential)) and not_custom_block(module))])
+				# print([module for module in model.modules() if default_block(module)])
 				# print("-*"*25)
 			model = model.eval()
 
