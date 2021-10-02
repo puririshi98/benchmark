@@ -78,10 +78,8 @@ def gen_simple_linear_model(n_devices):
 	return torch.nn.Sequential(*layer_list)
 
 def not_custom_block(module):
-	for typeofmodule in dir(torch.nn):
-		if '_' not in typeofmodule and isinstance(module,eval(typeofmodule)) and not typeofmodule == 'Module':
-			return True
-	return False
+	types = [eval(i) for i in list(dir(torch.nn)) if i!='Module' and any(x.isupper() for x in i)]
+	return isinstance(module, tuple(types))
 
 def assign_chunks(modules, n_devices):
 	num_modules = len(modules)
