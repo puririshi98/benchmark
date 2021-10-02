@@ -86,7 +86,7 @@ def not_custom_block(module):
 def assign_chunks(modules, n_devices):
 	num_modules = len(modules)
 	new_Module = torch.nn.Sequential(*modules)
-	modules = [module for module in model.modules() if ((not isinstance(module, nn.Sequential)) and not_custom_block(module))]
+	modules = [module for module in modules if ((not isinstance(module, nn.Sequential)) and not_custom_block(module))]
 
 	modules_in_each_chunk = int(num_modules / n_devices)
 	start_ptr = 0
