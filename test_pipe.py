@@ -78,6 +78,9 @@ def gen_simple_linear_model(n_devices):
 
 def assign_chunks(modules, n_devices):
 	num_modules = len(modules)
+	new_Module = torch.nn.Sequential(*modules)
+	modules = [module for module in new_Module.modules() if not isinstance(module, nn.Sequential)]
+
 	modules_in_each_chunk = int(num_modules / n_devices)
 	start_ptr = 0
 	for chunk in range(n_devices):
@@ -88,6 +91,7 @@ def assign_chunks(modules, n_devices):
 		for module_x in chunks:
 			module_x.cuda(chunk)
 		start_ptr += modules_in_each_chunk
+	return new_Module
 
 
 
@@ -131,7 +135,7 @@ def main():
 			if n_devices > 1:
 				try:
 					modules = [module for module in model.modules() if not isinstance(module, nn.Sequential)]
-					assign_chunks(modules, n_devices)	
+					model = assign_chunks(modules, n_devices)	
 					model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False)
 				except Exception as e:
 					print("On", n_devices, "devices")
