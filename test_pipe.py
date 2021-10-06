@@ -105,10 +105,17 @@ def assign_chunks(modules, n_devices):
 def pipe_setup(implementation, model):
 	try:
 		ogmodel = model
-		modules = [module for module in model.modules() if default_block(module)]
-
-		model = assign_chunks(modules, n_devices)	
-		model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False).eval()
+		if implementation == 'native':
+			modules = [module for module in model.modules() if default_block(module)]
+			model = assign_chunks(modules, n_devices)	
+			model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False)
+		elif implementation == 'FSDP':
+			model = FSDP(model.cuda())
+		elif implementation  == 'megatron':
+			pass
+		else:
+			print(implementation, "not a supported implementation!")
+			quit()
 		assert_msg = "pipelining for " + str(implementation) + ' ' + str(model_name) + ' damages correctness of the model'
 		assert torch.allclose(ogmodel.eval(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
 	except Exception as e:
@@ -117,7 +124,7 @@ def pipe_setup(implementation, model):
 		print("With implementation:", implementation)
 		traceback.print_exc(file=sys.stdout)
 		quit()
-	return model
+	return model.eval()
 
 def main():
 	os.environ['MASTER_ADDR'] = 'localhost'
@@ -126,6 +133,8 @@ def main():
 	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
 	runtimes = dict((implementation, runtimes) for implementation in ['native', 'megatron', 'fairscale'])
 	for implementation in ['native', 'megatron', 'FSDP']:
+		if implementation == 'megatron':
+			continue
 		for n_devices in range(1,torch.cuda.device_count()+1):
 			print("Testing", n_devices,"devices:")
 			#Model Inits
