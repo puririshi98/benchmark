@@ -131,8 +131,9 @@ def main():
 	os.environ['MASTER_PORT'] = '29500'
 	torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
 	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
-	runtimes = dict((implementation, runtimes) for implementation in ['native', 'megatron', 'fairscale'])
+	runtimes = dict((implementation, runtimes) for implementation in ['native', 'megatron', 'FSDP'])
 	for implementation in ['native', 'megatron', 'FSDP']:
+		print("Implementation:", implementation)
 		if implementation == 'megatron':
 			continue
 		for n_devices in range(1,torch.cuda.device_count()+1):
