@@ -112,28 +112,21 @@ def assign_chunks(modules, n_devices):
 		start_ptr += modules_in_each_chunk
 	return new_Module
 
-def pipe_setup(implementation, model, ogmodel, infer_inputs, n_devices, model_name, args):
-	try:
-		if implementation == 'native':
-			modules = [module for module in model.modules() if default_block(module)]
-			model = assign_chunks(modules, n_devices)	
-			model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False).eval()
-		elif implementation == 'FSDP':
-			model = FSDP(model.cuda()).eval()
-		elif implementation  == 'megatron':
-			pass
-		else:
-			print(implementation, "not a supported implementation!")
-			quit()
-		assert_msg = "pipelining for " + str(implementation) + ' ' + str(model_name) + ' damages correctness of the model'
-		torch.cuda.synchronize()
-		# assert torch.allclose(ogmodel(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
-	except Exception as e:
-		print("On", n_devices, "devices")
-		print("Could Not Succesfully Breakup:", model_name)
-		print("With implementation:", implementation)
-		if args.v:
-			traceback.print_exc(file=sys.stdout)
+def pipe_setup(implementation, model, ogmodel, infer_inputs, n_devices, model_name):
+	if implementation == 'native':
+		modules = [module for module in model.modules() if default_block(module)]
+		model = assign_chunks(modules, n_devices)	
+		model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False).eval()
+	elif implementation == 'FSDP':
+		model = FSDP(model.cuda()).eval()
+	elif implementation  == 'megatron':
+		pass
+	else:
+		print(implementation, "not a supported implementation!")
+		quit()
+	assert_msg = "pipelining for " + str(implementation) + ' ' + str(model_name) + ' damages correctness of the model'
+	torch.cuda.synchronize()
+	# assert torch.allclose(ogmodel(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
 	return model
 
 def main():
@@ -149,7 +142,7 @@ def main():
 		print("Implementation:", implementation)
 		if implementation == 'megatron':
 			continue
-		for n_devices in range(1,2+1):
+		for n_devices in range(1,int(torch.cuda.device_count())+1):
 			print("Testing", n_devices,"devices:")
 			#Model Inits
 			set_seed()
@@ -185,7 +178,15 @@ def main():
 
 				#setup model parallel
 				if n_devices > 1:
-					model = pipe_setup(implementation, model, ogmodel, infer_inputs, n_devices, model_name, args)
+					try:
+						model = pipe_setup(implementation, model, ogmodel, infer_inputs, n_devices, model_name)
+					except Exception as e:
+						print("On", n_devices, "devices")
+						print("Could Not Succesfully Breakup:", model_name)
+						print("With implementation:", implementation)
+						if args.v:
+							traceback.print_exc(file=sys.stdout)
+						continue
 				elif n_devices == 1 and implementation == 'native':
 					model =  model.cuda().eval()
 				elif n_devices == 1 and implementation != 'native':
