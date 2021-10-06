@@ -102,7 +102,7 @@ def assign_chunks(modules, n_devices):
 		start_ptr += modules_in_each_chunk
 	return new_Module
 
-def pipe_setup(implementation, model, infer_inputs, n_devices):
+def pipe_setup(implementation, model, infer_inputs, n_devices, model_name):
 	try:
 		ogmodel = model
 		if implementation == 'native':
