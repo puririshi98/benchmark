@@ -15,6 +15,7 @@ import torch.distributed.pipeline.sync
 import os
 import traceback
 import sys
+import copy
 
 def resolve_precision(precision: str):
 	assert precision in ('amp', 'float16', 'bfloat16', 'float32')
@@ -104,7 +105,7 @@ def assign_chunks(modules, n_devices):
 
 def pipe_setup(implementation, model, infer_inputs, n_devices, model_name):
 	try:
-		ogmodel = model
+		ogmodel = copy.deepcopy(model).cuda().eval()
 		if implementation == 'native':
 			modules = [module for module in model.modules() if default_block(module)]
 			model = assign_chunks(modules, n_devices)	
@@ -117,13 +118,12 @@ def pipe_setup(implementation, model, infer_inputs, n_devices, model_name):
 			print(implementation, "not a supported implementation!")
 			quit()
 		assert_msg = "pipelining for " + str(implementation) + ' ' + str(model_name) + ' damages correctness of the model'
-		assert torch.allclose(ogmodel.eval(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
+		assert torch.allclose(ogmodel(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
 	except Exception as e:
 		print("On", n_devices, "devices")
 		print("Could Not Succesfully Breakup:", model_name)
 		print("With implementation:", implementation)
 		traceback.print_exc(file=sys.stdout)
-		quit()
 	return model.eval()
 
 def main():
@@ -165,7 +165,7 @@ def main():
 
 				#setup model parallel
 				if n_devices > 1:
-					model = pipe_setup(implementation, model, infer_inputs, n_devices)
+					model = pipe_setup(implementation, model, infer_inputs, n_devices, model_name)
 				elif n_devices == 1 and implementation == 'native':
 					model =  model.cuda().eval()
 				else:
