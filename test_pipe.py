@@ -131,13 +131,12 @@ def pipe_setup(implementation, model, ogmodel, infer_inputs, n_devices, model_na
 
 def main():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-v", type=int, default=False, help="verbose")
+	parser.add_argument("-v", action='store_true', default=False, help="Verbose")
 	args = parser.parse_args()
 	os.environ['MASTER_ADDR'] = 'localhost'
 	os.environ['MASTER_PORT'] = '29500'
 	torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
-	runtimes = {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}
-	runtimes = dict((implementation, runtimes) for implementation in ['native', 'megatron', 'FSDP'])
+	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in ['native', 'megatron', 'FSDP'])
 	for implementation in ['native', 'megatron', 'FSDP']:
 		print("Implementation:", implementation)
 		if implementation == 'megatron':
@@ -210,7 +209,7 @@ def main():
 			print()
 			print('#'*25)
 	#report it
-	print(runtimes)
+		print(runtimes)
 
 
 
