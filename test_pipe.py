@@ -122,7 +122,12 @@ def run_fsdp(n_devices, model_name, verbose=False):
 	cmd = 'python -m torch.distributed.launch --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v' if verbose else ''
 	os.system(cmd)
 	filename = model_name + str(n_devices) + '.txt'
-	runtime = float(str(open(filename,'r').read()))
+	fileread = str(open(filename,'r').read())
+	try:
+		runtime = float(fileread)
+	except:
+		if verbose:
+			print(fileread)
 	os.remove(filename)
 	return runtime
 
