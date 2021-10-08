@@ -138,11 +138,11 @@ def main():
 	os.environ['MASTER_ADDR'] = 'localhost'
 	os.environ['MASTER_PORT'] = '29500'
 	rpc.init_rpc('worker', rank=0, world_size=1)
-	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in ['native', 'megatron', 'FSDP'])
-	for implementation in ['native', 'megatron', 'FSDP']:
+	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in ['native', 'FSDP'])
+	for implementation in ['native', 'FSDP']:
 		print("Implementation:", implementation)
 		for n_devices in range(1,int(torch.cuda.device_count())+1):
-			if n_devices == 1 and implementation == 'megatron':
+			if n_devices == 1 and implementation == 'FSDP':
 				rpc.shutdown()
 			print("Testing", n_devices,"devices:")
 			#Model Inits
@@ -206,12 +206,7 @@ def main():
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
 						continue
-					if implementation == 'megatron':
-						continue
-					elif implementation == 'FSDP':
-						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name, verbose=args.v)
-					else:
-						continue					
+					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name, verbose=args.v)					
 			print()
 			print('#'*25)
 	#report it
