@@ -32,7 +32,19 @@ def main():
 	else:
 		print("Model Not supported:", model_name)
 	model = FSDP(model.cuda()).eval()
-
+	try:
+		with torch.cuda.amp.autocast():
+			since = time.time()
+			for i in range(100):
+				model(*infer_inputs)
+			runtime = str(round((time.time()-since)*10, 2)) + ' ms'
+	except Exception as e:
+		print("On", n_devices, "devices")
+		print("Inference Failed for:", model_name)
+		if args.v:
+			traceback.print_exc(file=sys.stdout)
+	with open(model_name + str(n_devices) + '.txt','w+') as f:
+		print(runtime, file=f)
 
 
 if __name__ == "__main__":
