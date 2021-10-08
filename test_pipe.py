@@ -118,8 +118,8 @@ def pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name):
 	# assert torch.allclose(ogmodel(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
 	return model
 
-def run_fsdp(n_devices, model_name):
-	cmd = 'python -m torch.distributed.launch --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name)
+def run_fsdp(n_devices, model_name, verbose=False):
+	cmd = 'python -m torch.distributed.launch --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v' if verbose else ''
 	os.system(cmd)
 	filename = model_name + str(n_devices) + '.txt'
 	runtime = float(str(open(filename,'r').read()))
@@ -204,7 +204,7 @@ def main():
 					if implementation == 'megatron':
 						continue
 					elif implementation == 'FSDP':
-						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name)
+						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name, verbose=args.v)
 					else:
 						continue					
 			print()

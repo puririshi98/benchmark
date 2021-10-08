@@ -11,6 +11,8 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("MODEL_NAME", type=str,  help="model name")
 	parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
+	parser.add_argument("-v", action='store_true', default=False, help="Verbose")
+
 	args = parser.parse_args()
 	torch.cuda.set_device(args.local_rank)
 	device = torch.device("cuda", args.local_rank)
