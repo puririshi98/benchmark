@@ -147,14 +147,14 @@ def main():
 			print("Testing", n_devices,"devices:")
 			#Model Inits
 			set_seed()
-			models = {'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
+			models = {'Linear':gen_simple_linear_model(n_devices),
+				'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
 				'VT':timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True),
-				'Linear':gen_simple_linear_model(n_devices),
 				'hugface': BertModel(BertConfig())}
 			set_seed()
-			ogmodels = {'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
+			ogmodels = {'Linear':gen_simple_linear_model(n_devices),
+				'EF':timm.create_model('mixnet_m', pretrained=False, scriptable=True),
 				'VT':timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True),
-				'Linear':gen_simple_linear_model(n_devices),
 				'hugface': BertModel(BertConfig())}
 		
 			for model_name in models.keys():
