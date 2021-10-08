@@ -5,7 +5,7 @@ import timm.models.vision_transformer
 import timm.models.efficientnet
 from transformers import BertModel, BertConfig
 import argparse
-from test_pipe import set_seed
+from test_pipe import set_seed, gen_simple_linear_model
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -21,16 +21,20 @@ def main():
 	if model_name == 'EF':
 		cfg = TimmConfigEF(model=model, precision='float32')
 		infer_inputs = (cfg.infer_example_inputs.cuda(),)
+		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True)
 	elif model_name == 'VT':
 		cfg = TimmConfigVT(model=model, precision='float32')
 		infer_inputs = (cfg.infer_example_inputs.cuda(),)
+		model = timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True)
 	elif model_name == 'Linear':
 		infer_inputs = (torch.randn((64,1024*8)).cuda(),)
+		model = gen_simple_linear_model(n_devices)
 	elif model_name == 'hugface':
 		vocab_size = 30522
 		batchsize = 64
 		seqlen = 128
 		infer_inputs = (torch.randint(low=0, high=vocab_size, size=(batchsize, seqlen)).long().cuda(),)
+		model = BertModel(BertConfig())
 	else:
 		print("Model Not supported:", model_name)
 	model = FSDP(model.cuda()).eval()
