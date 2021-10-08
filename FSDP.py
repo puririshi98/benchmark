@@ -6,6 +6,8 @@ import timm.models.efficientnet
 from transformers import BertModel, BertConfig
 import argparse
 from test_pipe import set_seed, gen_simple_linear_model
+import traceback
+import time
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -45,7 +47,7 @@ def main():
 			since = time.time()
 			for i in range(100):
 				model(*infer_inputs)
-			runtime = str(round((time.time()-since)*10, 2)) + ' ms'
+		runtime = str(round((time.time()-since)*10, 2)) + ' ms'
 	except Exception as e:
 		print("On", n_devices, "devices")
 		print("Inference Failed for:", model_name)
@@ -53,7 +55,7 @@ def main():
 			traceback.print_exc(file=sys.stdout)
 	with open(model_name + str(n_devices) + '.txt','w+') as f:
 		print(runtime, file=f)
-
+	
 
 if __name__ == "__main__":
 	main()
