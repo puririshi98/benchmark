@@ -15,7 +15,7 @@ import sys
 import copy
 import random
 import numpy as np
-
+import torch.distributed.rpc as rpc
 
 def resolve_precision(precision: str):
 	assert precision in ('amp', 'float16', 'bfloat16', 'float32')
@@ -132,11 +132,13 @@ def main():
 	args = parser.parse_args()
 	os.environ['MASTER_ADDR'] = 'localhost'
 	os.environ['MASTER_PORT'] = '29500'
-	torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
+	rpc.init_rpc('worker', rank=0, world_size=1)
 	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in ['native', 'megatron', 'FSDP'])
 	for implementation in ['native', 'megatron', 'FSDP']:
 		print("Implementation:", implementation)
 		for n_devices in range(1,int(torch.cuda.device_count())+1):
+			if n_devices == 1 and implementation == 'megatron':
+				rpc.shutdown()
 			print("Testing", n_devices,"devices:")
 			#Model Inits
 			set_seed()

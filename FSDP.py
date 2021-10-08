@@ -5,6 +5,8 @@ import timm.models.vision_transformer
 import timm.models.efficientnet
 from transformers import BertModel, BertConfig
 import argparse
+from test_pipe import set_seed
+
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("MODEL_NAME", type=str,  help="model name")
