@@ -41,9 +41,10 @@ def main():
 		model = BertModel(BertConfig())
 	else:
 		print("Model Not supported:", model_name)
-	model = FSDP(model.cuda()).eval()
+	
 	with open(model_name + str(n_devices) + '.txt','w+') as f:
 		try:
+			model = FSDP(model.cuda()).eval()
 			with torch.cuda.amp.autocast():
 				since = time.time()
 				for i in range(100):
