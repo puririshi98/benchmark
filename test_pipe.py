@@ -113,7 +113,7 @@ def pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name):
 	modules = [module for module in model.modules() if default_block(module)]
 	model = assign_chunks(modules, n_devices)	
 	model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False).eval()
-	assert_msg = "pipelining for " + str(implementation) + ' ' + str(model_name) + ' damages correctness of the model'
+	assert_msg = "pipelining for " + str(model_name) + ' damages correctness of the model'
 	torch.cuda.synchronize()
 	# assert torch.allclose(ogmodel(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
 	return model
