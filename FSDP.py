@@ -23,13 +23,13 @@ def main():
 	set_seed()
 	model_name = args.MODEL_NAME
 	if model_name == 'EF':
+		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True)
 		cfg = TimmConfigEF(model=model, precision='float32')
 		infer_inputs = (cfg.infer_example_inputs.cuda(),)
-		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True)
 	elif model_name == 'VT':
-		cfg = TimmConfigVT(model=model, precision='float32')
-		infer_inputs = (cfg.infer_example_inputs.cuda(),)
 		model = timm.create_model('vit_small_patch16_224', pretrained=False, scriptable=True)
+		cfg = TimmConfigVT(model=model, precision='float32')
+		infer_inputs = (cfg.infer_example_inputs.cuda(),)		
 	elif model_name == 'Linear':
 		infer_inputs = (torch.randn((64,1024*8)).cuda(),)
 		model = gen_simple_linear_model(n_devices)
