@@ -5,7 +5,7 @@ import timm.models.vision_transformer
 import timm.models.efficientnet
 from transformers import BertModel, BertConfig
 import argparse
-from test_pipe import set_seed, gen_simple_linear_model
+from test_pipe import set_seed, gen_simple_linear_model, TimmConfigVT, TimmConfigEF
 import traceback
 import time
 
