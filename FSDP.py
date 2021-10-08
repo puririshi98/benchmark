@@ -15,7 +15,7 @@ def main():
 	torch.cuda.set_device(args.local_rank)
 	device = torch.device("cuda", args.local_rank)
 	torch.distributed.init_process_group(backend="nccl")
-	n_gpu = torch.distributed.get_world_size()
+	n_devices = torch.distributed.get_world_size()
 	set_seed()
 	model_name = args.MODEL_NAME
 	if model_name == 'EF':
