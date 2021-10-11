@@ -125,12 +125,12 @@ def run_fsdp(n_devices, model_name, verbose=False):
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
+		outs, errs = p.communicate()
 	except:
 		if verbose:
 			traceback.print_exc(file=sys.stdout)
 			print(args)
 			quit()
-	outs, errs = p.communicate()
 	filename = model_name + str(n_devices) + '.txt'
 	fileread = str(open(filename,'r').read())
 	try:
