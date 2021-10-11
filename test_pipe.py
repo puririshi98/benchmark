@@ -121,7 +121,7 @@ def pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name):
 	return model
 
 def run_fsdp(n_devices, model_name, verbose=False):
-	cmd = 'python -m torch.distributed.launch --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v' if verbose else ''
+	cmd = 'python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v' if verbose else ''
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
