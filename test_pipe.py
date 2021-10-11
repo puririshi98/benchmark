@@ -122,7 +122,7 @@ def pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name):
 
 def run_fsdp(n_devices, model_name, verbose=False):
 	cmd = 'python -m torch.distributed.launch --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v' if verbose else ''
-	args = shlex.split(cmd)
+	args = cmd.split(' ')
 	p = subprocess.Popen(args)
 	outs, errs = p.communicate()
 	filename = model_name + str(n_devices) + '.txt'
