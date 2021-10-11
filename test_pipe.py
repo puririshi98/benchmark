@@ -83,7 +83,7 @@ def set_seed():
 
 def gen_simple_linear_model(n_devices):
 	layer_list = []
-	hsize = 1024*8
+	hsize = 1024
 	for i in range(n_devices):
 		layer_list += [torch.nn.Linear(hsize,int(hsize))]
 		if i != n_devices-1:
