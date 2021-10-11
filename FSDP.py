@@ -16,6 +16,8 @@ def main():
 
 	args = parser.parse_args()
 	args.local_rank = int(os.environ["LOCAL_RANK"])
+	os.environ['MASTER_ADDR'] = 'localhost'
+	os.environ['MASTER_PORT'] = '29500'
 	torch.cuda.set_device(args.local_rank)
 	device = torch.device("cuda", args.local_rank)
 	torch.distributed.init_process_group(backend="nccl")
