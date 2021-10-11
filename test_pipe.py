@@ -141,6 +141,23 @@ def run_fsdp(n_devices, model_name, verbose=False):
 	os.remove(filename)
 	return runtime
 
+def plot(runtimes):
+	x = dict([(model, dict([(implementation, []) for implementation in runtimes.keys()])) for model in runtimes['native'].keys()])
+	y = dict([(model, dict([(implementation, []) for implementation in runtimes.keys()])) for model in runtimes['native'].keys()])
+	for model in runtimes['native'].keys():
+		for implementation in runtimes.keys():
+			for n_devices in runtimes['native']['Linear'].keys():
+				y[model][implementation].append(float(runtimes[implementation][model][n_devices].split(' ')[0]))
+				x[model][implementation].append(int(n_devices))
+			plt.scatter(x, y, label='implementation')
+		plt.legend()
+		plt.xlabel('n_devices')
+		plt.ylabel('Forward Pass time (ms)')
+		plt.title(str(model) + " Foward Pass Scaling")
+		plt.savefig(str(model) + '_scaling.png')
+		plt.close()
+
+
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-v", action='store_true', default=False, help="Verbose")
@@ -221,6 +238,7 @@ def main():
 			print('#'*25)
 	#report it
 		print(runtimes)
+		# plot(runtimes)
 
 
 
