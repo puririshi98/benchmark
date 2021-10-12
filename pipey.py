@@ -54,6 +54,8 @@ def main():
 				print("With implementation:", implementation)
 				if args.v:
 					traceback.print_exc(file=sys.stdout)
+		else:
+			model = model.cuda().eval()
 		try:
 			with torch.cuda.amp.autocast():
 				since = time.time()
