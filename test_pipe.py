@@ -140,9 +140,12 @@ def run_pipeline(n_devices, model_name):
 		p = subprocess.Popen(args)
 		outs, errs = p.communicate()
 	except:
-		traceback.print_exc(file=sys.stdout)
-		print(args)
-		quit()
+		if model_name == 'Linear':
+			traceback.print_exc(file=sys.stdout)
+			print(args)
+			quit()
+		else:
+			print("Inference failed for", model_name)
 	filename = model_name + str(n_devices) + '.txt'
 	fileread = str(open(filename,'r').read())
 	try:
