@@ -200,7 +200,7 @@ def main():
 		#report it
 		print("Runtimes in ms:")
 		print(runtimes)
-		# plot(runtimes)
+		plot(runtimes)
 
 
 
