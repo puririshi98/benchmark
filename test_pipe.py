@@ -163,7 +163,7 @@ def plot(runtimes):
 	for model in runtimes['native'].keys():
 		for implementation in runtimes.keys():
 			for n_devices in runtimes['native']['Linear'].keys():
-				y[model][implementation].append(float(runtimes[implementation][model][n_devices].split(' ')[0]))
+				y[model][implementation].append(float(runtimes[implementation][model][n_devices]))
 				x[model][implementation].append(int(n_devices))
 			plt.scatter(x, y, label='implementation')
 		plt.legend()
