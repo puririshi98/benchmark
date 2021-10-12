@@ -114,45 +114,41 @@ def pipe_setup(model, infer_inputs, n_devices, model_name):
 	torch.cuda.synchronize()
 	return model
 
-def run_fsdp(n_devices, model_name, verbose=False):
-	cmd = 'python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v' if verbose else ''
+def run_fsdp(n_devices, model_name):
+	cmd = 'python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v'
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
 		outs, errs = p.communicate()
 	except:
-		if verbose:
-			traceback.print_exc(file=sys.stdout)
-			print(args)
+		traceback.print_exc(file=sys.stdout)
+		print(args)
 		quit()
 	filename = model_name + str(n_devices) + '.txt'
 	fileread = str(open(filename,'r').read())
 	try:
 		runtime = float(fileread)
 	except:
-		if verbose:
-			print(fileread)
+		print(fileread)
 	os.remove(filename)
 	return runtime
 
-def run_pipeline(n_devices, model_name, verbose=False):
-	cmd = 'python pipey.py ' + str(model_name) + ' -v' if verbose else '' + ' -n_devices ' + str(n_devices)
+def run_pipeline(n_devices, model_name):
+	cmd = 'python pipey.py ' + str(model_name) + ' -v' + ' -n_devices ' + str(n_devices)
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
 		outs, errs = p.communicate()
 	except:
-		if verbose:
-			traceback.print_exc(file=sys.stdout)
-			print(args)
+		traceback.print_exc(file=sys.stdout)
+		print(args)
 		quit()
 	filename = model_name + str(n_devices) + '.txt'
 	fileread = str(open(filename,'r').read())
 	try:
 		runtime = float(fileread)
 	except:
-		if verbose:
-			print(fileread)
+		print(fileread)
 	os.remove(filename)
 	return runtime
 
@@ -174,10 +170,6 @@ def plot(runtimes):
 
 
 def main():
-	parser = argparse.ArgumentParser()
-	parser.add_argument("-v", action='store_true', default=False, help="Verbose")
-	args = parser.parse_args()
-
 	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in ['native', 'FSDP'])
 	for implementation in ['native', 'FSDP']:
 		print("Implementation:", implementation)
@@ -188,12 +180,12 @@ def main():
 			for model_name in ['Linear', 'EF', 'VT', 'hugface']:
 				#setup model parallel
 				if implementation == 'native':
-					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name, verbose=args.v)
+					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name)
 				else:
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
 					else:
-						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name, verbose=args.v)					
+						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name)					
 			print()
 			print('#'*25)
 		#report it
