@@ -35,7 +35,7 @@ def main():
 		cfg = TimmConfigVT(model=model, precision='float32')
 		infer_inputs = (cfg.infer_example_inputs.cuda(),)		
 	elif model_name == 'Linear':
-		infer_inputs = (torch.randn((64,1024*8)).cuda(),)
+		infer_inputs = (torch.randn((64,1024)).cuda(),)
 		model = gen_simple_linear_model(n_devices)
 	elif model_name == 'hugface':
 		vocab_size = 30522
