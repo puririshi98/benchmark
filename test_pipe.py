@@ -151,7 +151,9 @@ def run_pipeline(n_devices, model_name):
 	try:
 		runtime = float(fileread)
 	except:
-		print(fileread)
+		if model_name == 'Linear':
+				print(fileread)
+		runtime = float('nan')
 	os.remove(filename)
 	return runtime
 
@@ -183,7 +185,11 @@ def main():
 			for model_name in ['Linear', 'EF', 'VT', 'hugface']:
 				#setup model parallel
 				if implementation == 'native':
-					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name)
+					runtime = run_pipeline(n_devices, model_name)
+					if runtime != float('nan'):
+						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtime
+					else:
+						continue
 				else:
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
