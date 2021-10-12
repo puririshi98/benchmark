@@ -198,11 +198,6 @@ def main():
 							for i in range(100):
 								model(*infer_inputs)
 							runtimes[implementation][model_name][str(n_devices) + '_gpus'] = str(round((time.time()-since)*10, 2)) + ' ms'
-					except Exception as e:
-						print("On", n_devices, "devices")
-						print("Inference Failed for:", model_name)
-						if args.v:
-							traceback.print_exc(file=sys.stdout)
 				else:
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
