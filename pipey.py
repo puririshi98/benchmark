@@ -16,12 +16,13 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("MODEL_NAME", type=str,  help="model name")
 	parser.add_argument("-v", action='store_true', default=False, help="Verbose")
-
+	parser.add_argument("-n_devices", type=int, default=1, help="Number of devices")
 	args = parser.parse_args()
 	os.environ['MASTER_ADDR'] = 'localhost'
 	os.environ['MASTER_PORT'] = '29500'
 	rpc.init_rpc('worker', rank=0, world_size=1)
 	set_seed()
+	n_devices = args.n_devices
 	model_name = args.MODEL_NAME
 	if model_name == 'EF':
 		model = timm.create_model('mixnet_m', pretrained=False, scriptable=True)
@@ -44,14 +45,15 @@ def main():
 		print("Model Not supported:", model_name)
 	
 	with open(model_name + str(n_devices) + '.txt','w+') as f:
-		try:
-			model = pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name)
-		except Exception as e:
-			print("On", n_devices, "devices")
-			print("Could Not Succesfully Breakup:", model_name)
-			print("With implementation:", implementation)
-			if args.v:
-				traceback.print_exc(file=sys.stdout)
+		if n_devices > 1:
+			try:
+				model = pipe_setup(model, infer_inputs, n_devices, model_name)
+			except Exception as e:
+				print("On", n_devices, "devices")
+				print("Could Not Succesfully Breakup:", model_name)
+				print("With implementation:", implementation)
+				if args.v:
+					traceback.print_exc(file=sys.stdout)
 		try:
 			with torch.cuda.amp.autocast():
 				since = time.time()

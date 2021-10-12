@@ -107,12 +107,11 @@ def assign_chunks(modules, n_devices):
 		start_ptr += modules_in_each_chunk
 	return new_Module
 
-def pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name):
+def pipe_setup(model, infer_inputs, n_devices, model_name):
 	modules = [module for module in model.modules() if default_block(module)]
 	model = assign_chunks(modules, n_devices)	
 	model = torch.distributed.pipeline.sync.Pipe(model, chunks=n_devices, checkpoint='except_last', deferred_batch_norm=False).eval()
 	torch.cuda.synchronize()
-	# assert torch.allclose(ogmodel(*infer_inputs), model(*infer_inputs), atol=1e-2), assert_msg
 	return model
 
 def run_fsdp(n_devices, model_name, verbose=False):
@@ -137,7 +136,7 @@ def run_fsdp(n_devices, model_name, verbose=False):
 	return runtime
 
 def run_pipeline(n_devices, model_name, verbose=False):
-	cmd = 'python pipey.py ' + str(model_name) + ' -v' if verbose else ''
+	cmd = 'python pipey.py ' + str(model_name) + ' -v' if verbose else '' + ' -n_devices ' + str(n_devices)
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
@@ -189,15 +188,7 @@ def main():
 			for model_name in ['Linear', 'EF', 'VT', 'hugface']:
 				#setup model parallel
 				if implementation == 'native':
-					if n_devices > 1:
-						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name, verbose=args.v)
-					elif n_devices == 1:
-						model =  model.cuda().eval()
-						with torch.cuda.amp.autocast():
-							since = time.time()
-							for i in range(100):
-								model(*infer_inputs)
-							runtimes[implementation][model_name][str(n_devices) + '_gpus'] = str(round((time.time()-since)*10, 2)) + ' ms'
+					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name, verbose=args.v)
 				else:
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
