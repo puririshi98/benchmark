@@ -163,8 +163,12 @@ def plot(runtimes):
 	for model in runtimes['native'].keys():
 		for implementation in runtimes.keys():
 			for n_devices in runtimes['native']['Linear'].keys():
-				y[model][implementation].append(float(runtimes[implementation][model][n_devices]))
-				x[model][implementation].append(int(n_devices))
+				runtime = float(runtimes[implementation][model][n_devices])
+				if runtime != float('nan'):
+					y[model][implementation].append()
+					x[model][implementation].append(int(n_devices))
+				else:
+					continue
 			plt.scatter(x, y, label='implementation')
 		plt.legend()
 		plt.xlabel('n_devices')
