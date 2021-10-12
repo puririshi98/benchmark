@@ -55,12 +55,10 @@ def main():
 					model(*infer_inputs)
 			runtime = str(round((time.time()-since)*10, 2)) + ' ms'
 			print(runtime, file=f)
-			print(runtime)
 		except Exception as e:
 			print("On", n_devices, "devices", file=f)
 			print("Inference Failed for:", model_name, file=f)
 			if args.v:
-				traceback.print_exc(file=f)
 				traceback.print_exc(file=sys.stdout)
 	
 
