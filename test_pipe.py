@@ -196,7 +196,8 @@ def main():
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name, verbose=args.v)					
 			print()
 			print('#'*25)
-	#report it
+		#report it
+		print("Runtimes in ms:")
 		print(runtimes)
 		# plot(runtimes)
 

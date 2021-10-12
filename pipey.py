@@ -61,7 +61,7 @@ def main():
 				since = time.time()
 				for i in range(100):
 					model(*infer_inputs)
-			runtime = str(round((time.time()-since)*10, 2)) + ' ms'
+			runtime = str(round((time.time()-since)*10, 2))
 			print(runtime, file=f)
 		except Exception as e:
 			print("On", n_devices, "devices", file=f)
