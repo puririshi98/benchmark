@@ -9,7 +9,7 @@ from test_pipe import set_seed, gen_simple_linear_model, TimmConfigVT, TimmConfi
 import traceback
 import time
 import os
-
+import sys
 
 def main():
 	parser = argparse.ArgumentParser()
