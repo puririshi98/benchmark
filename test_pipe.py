@@ -185,11 +185,7 @@ def main():
 			for model_name in ['Linear', 'EF', 'VT', 'hugface']:
 				#setup model parallel
 				if implementation == 'native':
-					runtime = run_pipeline(n_devices, model_name)
-					if runtime != float('nan'):
-						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtime
-					else:
-						continue
+					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name)
 				else:
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
