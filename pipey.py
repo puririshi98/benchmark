@@ -1,14 +1,15 @@
-import fairscale
-from fairscale.nn.data_parallel import FullyShardedDataParallel as FSDP
 import torch
 import timm.models.vision_transformer
 import timm.models.efficientnet
 from transformers import BertModel, BertConfig
 import argparse
-from test_pipe import set_seed, gen_simple_linear_model, TimmConfigVT, TimmConfigEF
+from test_pipe import set_seed, gen_simple_linear_model, TimmConfigVT, TimmConfigEF, pipe_setup
 import traceback
 import time
 import os
+import torch.distributed.pipeline
+import torch.distributed.pipeline.sync
+import torch.distributed.rpc as rpc
 
 
 def main():
@@ -17,13 +18,9 @@ def main():
 	parser.add_argument("-v", action='store_true', default=False, help="Verbose")
 
 	args = parser.parse_args()
-	args.local_rank = int(os.environ["LOCAL_RANK"])
 	os.environ['MASTER_ADDR'] = 'localhost'
-	os.environ['MASTER_PORT'] = '29501'
-	torch.cuda.set_device(args.local_rank)
-	device = torch.device("cuda", args.local_rank)
-	torch.distributed.init_process_group(backend="nccl")
-	n_devices = torch.distributed.get_world_size()
+	os.environ['MASTER_PORT'] = '29500'
+	rpc.init_rpc('worker', rank=0, world_size=1)
 	set_seed()
 	model_name = args.MODEL_NAME
 	if model_name == 'EF':
@@ -48,7 +45,14 @@ def main():
 	
 	with open(model_name + str(n_devices) + '.txt','w+') as f:
 		try:
-			model = FSDP(model.cuda()).eval()
+			model = pipe_setup(model, ogmodel, infer_inputs, n_devices, model_name)
+		except Exception as e:
+			print("On", n_devices, "devices")
+			print("Could Not Succesfully Breakup:", model_name)
+			print("With implementation:", implementation)
+			if args.v:
+				traceback.print_exc(file=sys.stdout)
+		try:
 			with torch.cuda.amp.autocast():
 				since = time.time()
 				for i in range(100):
@@ -62,7 +66,7 @@ def main():
 			if args.v:
 				traceback.print_exc(file=f)
 				traceback.print_exc(file=sys.stdout)
-	
+	rpc.shutdown()
 
 
 if __name__ == "__main__":
