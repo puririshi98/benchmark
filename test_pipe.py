@@ -158,6 +158,7 @@ def run_pipeline(n_devices, model_name):
 	return runtime
 
 def plot(runtimes):
+	import matplotlib.pyplot as plt
 	x = dict([(model, dict([(implementation, []) for implementation in runtimes.keys()])) for model in runtimes['native'].keys()])
 	y = dict([(model, dict([(implementation, []) for implementation in runtimes.keys()])) for model in runtimes['native'].keys()])
 	for model in runtimes['native'].keys():
