@@ -165,7 +165,7 @@ def plot(runtimes):
 			for n_devices in runtimes['native']['Linear'].keys():
 				runtime = float(runtimes[implementation][model][n_devices])
 				if runtime != float('nan'):
-					y[model][implementation].append()
+					y[model][implementation].append(runtime)
 					x[model][implementation].append(int(n_devices))
 				else:
 					continue
