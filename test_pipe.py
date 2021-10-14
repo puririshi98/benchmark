@@ -166,7 +166,7 @@ def plot(runtimes):
 				runtime = float(runtimes[implementation][model][n_devices])
 				if runtime != float('nan'):
 					y[model][implementation].append(runtime)
-					x[model][implementation].append(int(n_devices))
+					x[model][implementation].append(int(n_devices.split('_')[0]))
 				else:
 					continue
 			plt.scatter(x, y, label='implementation')
