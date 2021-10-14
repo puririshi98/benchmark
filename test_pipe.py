@@ -170,7 +170,7 @@ def plot(runtimes):
 					x[model][implementation].append(int(n_devices.split('_')[0]))
 				else:
 					continue
-			plt.scatter(x, y, label='implementation')
+			plt.scatter(x[model][implementation], y[model][implementation], label='implementation')
 		plt.legend()
 		plt.xlabel('n_devices')
 		plt.ylabel('Forward Pass time (ms)')
