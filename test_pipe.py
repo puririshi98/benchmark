@@ -115,11 +115,10 @@ def pipe_setup(model, infer_inputs, n_devices, model_name):
 	return model
 
 def run_fsdp(n_devices, model_name):
-	cmd = 'python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' -W ignore FSDP.py ' + str(model_name) + ' -v'
+	cmd = 'PYTHONWARNINGS="ignore" python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' FSDP.py ' + str(model_name) + ' -v'
 	args = list(cmd.split(' '))
 	try:
-		p = subprocess.Popen(args)
-		outs, errs = p.communicate()
+		os.system(cmd)
 	except:
 		traceback.print_exc(file=sys.stdout)
 		print(args)
@@ -158,11 +157,10 @@ def run_pipeline(n_devices, model_name):
 	return runtime
 
 def run_deepspeed_zero3(n_devices, model_name):
-	cmd = 'python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + '  -W ignore deepspeed_zero3.py  ' + str(model_name) + ' -v'
+	cmd = 'PYTHONWARNINGS="ignore" python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' deepspeed_zero3.py  ' + str(model_name) + ' -v'
 	args = list(cmd.split(' '))
 	try:
-		p = subprocess.Popen(args)
-		outs, errs = p.communicate()
+		os.system(cmd)
 	except:
 		traceback.print_exc(file=sys.stdout)
 		print(args)
