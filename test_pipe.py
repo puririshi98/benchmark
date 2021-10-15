@@ -157,6 +157,25 @@ def run_pipeline(n_devices, model_name):
 	os.remove(filename)
 	return runtime
 
+def run_deepspeed_zero3(n_devices, model_name):
+	cmd = 'python -m torch.distributed.run --nproc_per_node=' + str(n_devices) + ' deepspeed_zero3.py  ' + str(model_name) + ' -v'
+	args = list(cmd.split(' '))
+	try:
+		p = subprocess.Popen(args)
+		outs, errs = p.communicate()
+	except:
+		traceback.print_exc(file=sys.stdout)
+		print(args)
+		quit()
+	filename = model_name + str(n_devices) + '.txt'
+	fileread = str(open(filename,'r').read())
+	try:
+		runtime = float(fileread)
+	except:
+		print(fileread)
+	os.remove(filename)
+	return runtime
+
 def plot(runtimes):
 	import matplotlib.pyplot as plt
 	x = dict([(model, dict([(implementation, []) for implementation in runtimes.keys()])) for model in runtimes['native'].keys()])
@@ -183,8 +202,9 @@ def plot(runtimes):
 
 
 def main():
-	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in ['native', 'FSDP'])
-	for implementation in ['native', 'FSDP']:
+	implementations = ['native', 'FSDP', 'deepspeed_zero3']
+	runtimes = dict((implementation, {'EF':{}, 'VT':{}, 'Linear':{}, 'hugface':{}}) for implementation in implementations)
+	for implementation in implementations:
 		print("Implementation:", implementation)
 		for n_devices in range(1,int(torch.cuda.device_count())+1):				
 			print("Testing", n_devices,"devices:")
@@ -194,11 +214,16 @@ def main():
 				#setup model parallel
 				if implementation == 'native':
 					runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_pipeline(n_devices, model_name)
-				else:
+				elif implementation == 'FSDP':
 					if n_devices == 1:
 						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
 					else:
-						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name)					
+						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_fsdp(n_devices, model_name)	
+				elif implementation == 'deepspeed_zero3':
+					if n_devices == 1:
+						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = runtimes['native'][model_name][str(n_devices) + '_gpus']
+					else:
+						runtimes[implementation][model_name][str(n_devices) + '_gpus'] = run_deepspeed_zero3(n_devices, model_name)				
 			print()
 			print('#'*25)
 		#report it
