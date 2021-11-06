@@ -72,10 +72,10 @@ def main():
 	runtimes = dict((implementation, {}) for implementation in implementations)
 	for implementation in implementations:
 		print("Implementation:", implementation)
-		for n_layers in range(1,100):
-			print("Testing", n_devices,"layers:")
-			runtime = run_offload(n_devices, model_name)
-			runtimes[implementation][str(n_layers)+' layers'] = runtime
+		for n in range(1,100):
+			print("Testing", n,"layers:")
+			runtime = run_offload(n, model_name)
+			runtimes[implementation][str(n)+' layers'] = runtime
 			print(runtime)
 			print('#'*10)
 		#report it
