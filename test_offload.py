@@ -74,7 +74,7 @@ def main():
 		print("Implementation:", implementation)
 		for n in range(1,100):
 			print("Testing", n,"layers:")
-			runtime = run_offload(n, model_name)
+			runtime = run_offload(n, implementation)
 			runtimes[implementation][str(n)+' layers'] = runtime
 			print(runtime)
 			print('#'*10)
