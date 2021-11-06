@@ -80,7 +80,7 @@ def main():
 	runtimes = dict((implementation, {}) for implementation in implementations)
 	for implementation in implementations:
 		print("Implementation:", implementation)
-		for n in range(1,10000):
+		for n in range(50,10000,50):
 			print("Testing", n,"layers:")
 			runtime = run_offload(n, implementation)
 			runtimes[implementation][str(n)+' layers'] = runtime
