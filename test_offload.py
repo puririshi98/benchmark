@@ -11,12 +11,6 @@ import numpy as np
 import subprocess
 
 
-def set_seed():
-	random.seed(0)
-	np.random.seed(0)
-	torch.manual_seed(0)
-	torch.cuda.manual_seed_all(0)
-
 def gen_simple_linear_model(n):
 	layer_list = []
 	hsize = 1024
@@ -27,6 +21,20 @@ def gen_simple_linear_model(n):
 	return torch.nn.Sequential(*layer_list)
 
 
+def set_seed():
+	random.seed(0)
+	np.random.seed(0)
+	torch.manual_seed(0)
+	torch.cuda.manual_seed_all(0)
+
+def gen_simple_linear_model(n_devices):
+	layer_list = []
+	hsize = 1024
+	for i in range(n_devices):
+		layer_list += [torch.nn.Linear(hsize,int(hsize))]
+		if i != n_devices-1:
+			layer_list += [torch.nn.ReLU()]
+	return torch.nn.Sequential(*layer_list)
 
 def run_offload(n, implementation):
 	cmd = 'python3 ' + str(implementation) + '.py ' + str(n)

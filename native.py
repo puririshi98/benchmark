@@ -1,6 +1,6 @@
 import torch
 import argparse
-from test_pipe import set_seed, gen_simple_linear_model
+from test_offload import set_seed, gen_simple_linear_model
 import traceback
 import time
 import os
