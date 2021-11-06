@@ -14,6 +14,7 @@ def main():
 	n=args.N
 	model = gen_simple_linear_model(n)
 	implementation = str(__file__).split(os.sep)[-1].split('.')[0]
+	infer_inputs = (torch.randn((64,1024)).cuda(),)
 	with open(implementation + str(n) + '.txt','w+') as f:
 		model = model.cuda().eval()
 		try:
