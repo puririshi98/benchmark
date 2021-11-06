@@ -62,12 +62,12 @@ def plot(runtimes):
 			try:
 				runtime = float(runtimes[implementation][n_layers])
 				y[model][implementation].append(runtime)
-				x[model][implementation].append(int(n_layers.split(' ')[0]))
+				[1024 * 1025 / 1000000 * [model][implementation].append(int(n_layers.split(' ')[0]))]
 			except:
 				continue
 	plt.scatter(x[model][implementation], y[model][implementation], label=str(implementation))
 	plt.legend()
-	plt.xlabel('number of layers (1024x1024)')
+	plt.xlabel('Parameters (Millions)')
 	plt.ylabel('Forward Pass time (ms)')
 	plt.title(str("Offload Foward Pass Scaling"))
 	plt.savefig('offload_scaling.png')
