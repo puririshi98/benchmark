@@ -29,7 +29,6 @@ def main():
 			print("On", n, "devices", file=f)
 			print("Inference Failed for:", implementation, file=f)
 			traceback.print_exc(file=f)
-	rpc.shutdown()
 
 
 if __name__ == "__main__":
