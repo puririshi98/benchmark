@@ -55,8 +55,6 @@ def plot(runtimes):
 				runtime = float(runtimes[implementation][n_layers])
 				y[model][implementation].append(runtime)
 				x[model][implementation].append(int(n_layers.split(' ')[0]))
-				else:
-					continue
 			except:
 				continue
 	plt.scatter(x[model][implementation], y[model][implementation], label=str(implementation))
