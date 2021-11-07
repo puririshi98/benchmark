@@ -21,9 +21,9 @@ def main():
 			with torch.autograd.graph.save_on_cpu():
 				with torch.cuda.amp.autocast():
 					since = time.time()
-					for i in range(100):
+					for i in range(5):
 						model(*infer_inputs)
-			runtime = str(round((time.time()-since)*10, 2))
+			runtime = str(round((time.time()-since)*1000 / 5, 2))
 			print(runtime, file=f)
 		except Exception as e:
 			print("On", n, "devices", file=f)
