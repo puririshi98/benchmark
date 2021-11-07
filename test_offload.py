@@ -82,7 +82,7 @@ def main():
 		print("Implementation:", implementation)
 		for n in range(100,3200,100):
 			print("Testing", n,"layers:")
-			if i == 3100:
+			if n == 3100:
 				torch.cuda.cudart().cudaProfilerStart()
 			runtime = run_offload(n, implementation)
 			runtimes[implementation][str(n)+' layers'] = runtime
