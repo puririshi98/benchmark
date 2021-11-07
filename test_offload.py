@@ -80,13 +80,16 @@ def main():
 	runtimes = dict((implementation, {}) for implementation in implementations)
 	for implementation in implementations:
 		print("Implementation:", implementation)
-		for n in range(100,2500,100): #xpl can handle at most 2500
+		for n in range(100,3200,100):
 			print("Testing", n,"layers:")
+			if i == 3100:
+				torch.cuda.cudart().cudaProfilerStart()
 			runtime = run_offload(n, implementation)
 			runtimes[implementation][str(n)+' layers'] = runtime
 			print(runtime)
 			print('#'*10)
-		#report it
+	#report it
+	torch.cuda.cudart().cudaProfilerStop()
 	print("Runtimes in ms:")
 	print(runtimes)
 	plot(runtimes)
