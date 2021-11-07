@@ -72,9 +72,10 @@ def main():
 		for implementation in implementations:
 			print("Implementation:", implementation)
 			for n in range(500,10000,500):
+				bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
+				print("Testing", n,"1024x1024x layers ->", bill_params, 'billion parameters')
 				runtime = run_offload(n, implementation)
-				runtimes[implementation][round(1024 * 1025 / 1000000 * n,3)] = runtime
-				print(runtimes)
+				runtimes[implementation][bill_params] = runtime
 	except:
 		print(runtimes)
 		plot(runtimes)
