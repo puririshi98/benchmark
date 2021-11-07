@@ -36,8 +36,8 @@ def gen_simple_linear_model(n_devices):
 			layer_list += [torch.nn.ReLU()]
 	return torch.nn.Sequential(*layer_list)
 
-def run_offload(n, implementation):
-	cmd = 'python3 ' + str(implementation) + '.py ' + str(n)
+def run_offload(n):
+	cmd = 'python3 native.py ' + str(n)
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
@@ -69,7 +69,7 @@ def main():
 		for n in range(500,10000,500):
 			bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
 			print("Testing", n,"1024x1024x layers ->", bill_params, 'billion parameters')
-			runtime = run_offload(n, implementation)
+			runtime = run_offload(n)
 			runtimes[bill_params] = runtime
 	except Exception as e:
 		print(e)
