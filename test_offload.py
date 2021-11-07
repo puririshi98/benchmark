@@ -68,7 +68,7 @@ def main():
 	try:
 		for n in range(500,10000,500):
 			bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
-			print("Testing", n,"1024x1024x layers ->", bill_params, 'billion parameters:', end=' ')
+			print("Testing", n,"1024x1024 layers ->", bill_params, 'billion parameters:', end=' ')
 			runtime = run_offload(n)
 			runtimes[bill_params] = runtime
 			print(runtime, 'ms')
