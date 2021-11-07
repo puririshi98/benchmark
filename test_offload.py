@@ -55,9 +55,8 @@ def run_offload(n, implementation):
 
 def plot(runtimes):
 	import matplotlib.pyplot as plt
-	plt.scatter(runtimes[implementation].keys(), runtimes[implementation].values(), label=str(implementation))
-	plt.legend()
-	plt.xlabel('Parameters (Millions)')
+	plt.scatter(runtimes.keys(), runtimes.values())
+	plt.xlabel('Parameters (Billions)')
 	plt.ylabel('Forward Pass time (ms)')
 	plt.title(str("Offload Foward Pass Scaling"))
 	plt.savefig('offload_scaling.png')
@@ -65,17 +64,14 @@ def plot(runtimes):
 
 
 def main():
-	# implementations = ['native', 'deepspeed']
-	implementations = ['native']
-	runtimes = dict((implementation, {}) for implementation in implementations)
+	runtimes = {}
 	try:
-		for implementation in implementations:
-			print("Implementation:", implementation)
-			for n in range(500,10000,500):
-				bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
-				print("Testing", n,"1024x1024x layers ->", bill_params, 'billion parameters')
-				runtime = run_offload(n, implementation)
-				runtimes[implementation][bill_params] = runtime
+		print("Implementation:", implementation)
+		for n in range(500,10000,500):
+			bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
+			print("Testing", n,"1024x1024x layers ->", bill_params, 'billion parameters')
+			runtime = run_offload(n, implementation)
+			runtimes[bill_params] = runtime
 	except:
 		print(runtimes)
 		plot(runtimes)
