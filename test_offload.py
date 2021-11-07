@@ -68,13 +68,16 @@ def main():
 	# implementations = ['native', 'deepspeed']
 	implementations = ['native']
 	runtimes = dict((implementation, {}) for implementation in implementations)
-	for implementation in implementations:
-		print("Implementation:", implementation)
-		for n in range(500,10000,500):
-			runtime = run_offload(n, implementation)
-			runtimes[implementation][1024 * 1025 / 1000000 * n] = runtime
-			print(runtimes)
-	plot(runtimes)
+	try:
+		for implementation in implementations:
+			print("Implementation:", implementation)
+			for n in range(500,10000,500):
+				runtime = run_offload(n, implementation)
+				runtimes[implementation][round(1024 * 1025 / 1000000 * n,3)] = runtime
+				print(runtimes)
+	except:
+		print(runtimes)
+		plot(runtimes)
 
 
 
