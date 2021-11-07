@@ -55,17 +55,7 @@ def run_offload(n, implementation):
 
 def plot(runtimes):
 	import matplotlib.pyplot as plt
-	x = dict([(implementation, []) for implementation in runtimes.keys()])
-	y = dict([(implementation, []) for implementation in runtimes.keys()])
-	for implementation in runtimes.keys():
-		for n_layers in runtimes['native'].keys():
-			try:
-				runtime = float(runtimes[implementation][n_layers])
-				y[model][implementation].append(runtime)
-				[1024 * 1025 / 1000000 * [model][implementation].append(int(n_layers.split(' ')[0]))]
-			except:
-				continue
-	plt.scatter(x[model][implementation], y[model][implementation], label=str(implementation))
+	plt.scatter(runtimes[implementation].keys(), runtimes[implementation].values(), label=str(implementation))
 	plt.legend()
 	plt.xlabel('Parameters (Millions)')
 	plt.ylabel('Forward Pass time (ms)')
@@ -81,14 +71,9 @@ def main():
 	for implementation in implementations:
 		print("Implementation:", implementation)
 		for n in range(500,10000,500):
-			print("Testing", n,"layers:")
 			runtime = run_offload(n, implementation)
-			runtimes[implementation][str(n)+' layers'] = runtime
-			print(runtime)
-			print('#'*10)
-	#report it
-	print("Runtimes in ms:")
-	print(runtimes)
+			runtimes[implementation][1024 * 1025 / 1000000 * n] = runtime
+			print(runtimes)
 	plot(runtimes)
 
 
