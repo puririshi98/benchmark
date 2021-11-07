@@ -45,8 +45,8 @@ def run_offload(n):
 	except:
 		traceback.print_exc(file=sys.stdout)
 		print(args)
-		print("Inference failed for", implementation)
-	filename = implementation + str(n) + '.txt'
+		print("Inference failed")
+	filename = 'native' + str(n) + '.txt'
 	fileread = str(open(filename,'r').read())
 	runtime = float(fileread)
 	os.remove(filename)
