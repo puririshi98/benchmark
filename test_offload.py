@@ -66,13 +66,13 @@ def plot(runtimes):
 def main():
 	runtimes = {}
 	try:
-		print("Implementation:", implementation)
 		for n in range(500,10000,500):
 			bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
 			print("Testing", n,"1024x1024x layers ->", bill_params, 'billion parameters')
 			runtime = run_offload(n, implementation)
 			runtimes[bill_params] = runtime
-	except:
+	except Exception as e:
+		print(e)
 		print(runtimes)
 		plot(runtimes)
 
