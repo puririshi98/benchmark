@@ -32,9 +32,9 @@ def main():
 								model(*infer_inputs)
 						torch.cuda.current_stream().wait_stream(s)
 						g = torch.cuda.CUDAGraph()
+						since = time.time()
 						with torch.cuda.graph(g):
 							model(*infer_inputs) #capture
-							since = time.time()
 							for i in range(5): #replay
 								g.replay()			
 			runtime = str(round((time.time()-since)*1000 / 5, 2))
