@@ -45,6 +45,7 @@ def plot(runtimes):
 	import matplotlib.pyplot as plt
 	for graphed in [True,False]:
 			plt.scatter(runtimes[graphed].keys(), runtimes[graphed].values(), label='CUDAGRAPHS='+str(graphed))
+	plt.legend()
 	plt.xlabel('Parameters (Billions)')
 	plt.ylabel('Forward Pass time (ms)')
 	plt.title(str("Autocast+Offload Foward Pass Scaling"))
