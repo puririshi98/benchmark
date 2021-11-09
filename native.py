@@ -17,7 +17,8 @@ def main():
 	infer_inputs = (torch.randn((1,1024)).cuda(),)
 	with open(implementation + str(n) + '.txt','w+') as f:
 		try:
-			with torch.autograd.graph.save_on_cpu():
+			# with torch.autograd.graph.save_on_cpu():
+			if True:
 				with torch.cuda.amp.autocast():
 					model = gen_simple_linear_model(n).cuda().eval()
 					if not args.graphs:
@@ -32,9 +33,9 @@ def main():
 								model(*infer_inputs)
 						torch.cuda.current_stream().wait_stream(s)
 						g = torch.cuda.CUDAGraph()
-						since = time.time()
 						with torch.cuda.graph(g):
 							model(*infer_inputs) #capture
+							since = time.time()
 							for i in range(5): #replay
 								g.replay()			
 			runtime = str(round((time.time()-since)*1000 / 5, 2))
