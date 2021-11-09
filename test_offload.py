@@ -35,8 +35,8 @@ def gen_simple_linear_model(n_devices):
 			layer_list += [torch.nn.ReLU()]
 	return torch.nn.Sequential(*layer_list)
 
-def run_offload(n):
-	cmd = 'python3 native.py ' + str(n)
+def run_offload(n, graphed):
+	cmd = 'python3 native.py ' + str(n) + '-graphs' if graphed else ''
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
@@ -54,23 +54,27 @@ def run_offload(n):
 
 def plot(runtimes):
 	import matplotlib.pyplot as plt
-	plt.scatter(runtimes.keys(), runtimes.values())
+	for graphed in [True,False]:
+			plt.scatter(runtimes[graphed].keys(), runtimes[graphed].values(), label='CUDAGRAPHS='+str(graphed))
 	plt.xlabel('Parameters (Billions)')
 	plt.ylabel('Forward Pass time (ms)')
-	plt.title(str("Offload Foward Pass Scaling"))
+	plt.title(str("Autocast+Offload Foward Pass Scaling"))
 	plt.savefig('offload_scaling.png')
 	plt.close()
 
 
 def main():
-	runtimes = {}
+	T_F = [True,False]
+	runtimes = dict([(x,{}) for x in T_F])
 	try:
-		for n in range(500,1000000,500):
-			bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
-			print("Testing", n,"1024x1024 layers ->", bill_params, 'billion parameters:', end=' ')
-			runtime = run_offload(n)
-			runtimes[bill_params] = runtime
-			print(runtime, 'ms')
+		for graphed in T_F:
+			print("CUDAGRAPHS = ", graphed)
+			for n in range(500,1000000,500):
+				bill_params = round((1024.0 * 1025.0 / (10.0**9)) * n,3)
+				print("Testing", n,"1024x1024 layers ->", bill_params, 'billion parameters w/' + '' if graphed else 'o ' + ' ', end='cudagraphs: ')
+				runtime = run_offload(n, graphed)
+				runtimes[graphed][bill_params] = runtime
+				print(runtime, 'ms')
 	except Exception as e:
 		print(e)
 		print(runtimes)

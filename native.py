@@ -20,7 +20,7 @@ def main():
 			with torch.autograd.graph.save_on_cpu():
 				with torch.cuda.amp.autocast():
 					model = gen_simple_linear_model(n).cuda().eval()
-					if args.graphs:
+					if not args.graphs:
 						since = time.time()
 						for i in range(5):
 							model(*infer_inputs)
