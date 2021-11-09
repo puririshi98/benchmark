@@ -9,17 +9,6 @@ import random
 import numpy as np
 import subprocess
 
-
-def gen_simple_linear_model(n):
-	layer_list = []
-	hsize = 1024
-	for i in range(n):
-		layer_list += [torch.nn.Linear(hsize,int(hsize))]
-		if i != n_devices-1:
-			layer_list += [torch.nn.ReLU()]
-	return torch.nn.Sequential(*layer_list)
-
-
 def set_seed():
 	random.seed(0)
 	np.random.seed(0)
