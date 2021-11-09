@@ -25,7 +25,7 @@ def gen_simple_linear_model(n_devices):
 	return torch.nn.Sequential(*layer_list)
 
 def run_offload(n, graphed):
-	cmd = 'python3 native.py ' + str(n) + '-graphs' if graphed else ''
+	cmd = 'python3 native.py ' + str(n) + ' -graphs' if graphed else ''
 	args = list(cmd.split(' '))
 	try:
 		p = subprocess.Popen(args)
