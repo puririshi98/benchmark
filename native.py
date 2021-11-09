@@ -17,8 +17,8 @@ def main():
 	infer_inputs = (torch.randn((1,1024)).cuda(),)
 	with open(implementation + str(n) + '.txt','w+') as f:
 		try:
-			# with torch.autograd.graph.save_on_cpu():
-			if True:
+			with torch.autograd.graph.save_on_cpu():
+			# if True:
 				with torch.cuda.amp.autocast():
 					model = gen_simple_linear_model(n).cuda().eval()
 					if not args.graphs:
