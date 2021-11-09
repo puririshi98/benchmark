@@ -35,9 +35,9 @@ def main():
 						g = torch.cuda.CUDAGraph()
 						with torch.cuda.graph(g):
 							model(*infer_inputs) #capture
-							since = time.time()
-							for i in range(5): #replay
-								g.replay()			
+						since = time.time()
+						for i in range(5): #replay
+							g.replay()
 			runtime = str(round((time.time()-since)*1000 / 5, 2))
 			print(runtime, file=f)
 		except Exception as e:
