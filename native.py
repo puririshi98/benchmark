@@ -26,20 +26,17 @@ def main():
 							model(*infer_inputs)
 					else:
 						s = torch.cuda.Stream()
-						torch.cuda.synchronize()
+						s.wait_stream(torch.cuda.current_stream()) #warmup
 						with torch.cuda.stream(s):
 							for i in range(5):
 								model(*infer_inputs)
-							torch.cuda.empty_cache()
-							g = torch.cuda._Graph()
-							torch.cuda.synchronize()
-							g.capture_begin()
-							model(*infer_inputs)
-							g.capture_end()
-							torch.cuda.synchronize()
-						since = time.time()
-						for i in range(5):
-							g.replay()			
+						torch.cuda.current_stream().wait_stream(s)
+						g = torch.cuda.CUDAGraph()
+						with torch.cuda.graph(g):
+							model(*infer_inputs) #capture
+							since = time.time()
+							for i in range(5): #replay
+								g.replay()			
 			runtime = str(round((time.time()-since)*1000 / 5, 2))
 			print(runtime, file=f)
 		except Exception as e:
