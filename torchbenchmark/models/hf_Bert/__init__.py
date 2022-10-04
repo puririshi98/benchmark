@@ -79,7 +79,7 @@ class Model(BenchmarkModel):
                 since=time.time()
                 for _ in range(100):
                     g.replay()
-                    torch.cuda.synchronize()
+                    # torch.cuda.synchronize()
                 print("Average Replay Time for bert:",round(1000.0 * (time.time()-since)/100.0,5),"ms")
                 nvtx.range_pop()
             else:
